@@ -11,10 +11,10 @@ export class EmbeddingsService {
         this.config = {
             postgresConnectionOptions: {
                 type: "postgres",
-                host: "postgres",
+                host: process.env.DB_HOST || "postgres",
                 port: 5432,
-                user: "postgres",
-                password: "postgres",
+                user: process.env.DB_USER || "postgres",
+                password: process.env.DB_PASSWORD || "postgres",
                 database: "postgres",
             },
             tableName: "embeddings",

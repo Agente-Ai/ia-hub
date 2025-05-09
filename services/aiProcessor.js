@@ -20,15 +20,15 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 export const processMessage = async ({ entry }) => {
     // Configurações adicionais para tornar a conexão mais robusta em produção
     const pool = new pg.Pool({
-        host: "postgres",
+        host: process.env.DB_HOST || "postgres",
         port: 5432,
-        user: "postgres",
-        password: "postgres",
+        user: process.env.DB_USER || "postgres",
+        password: process.env.DB_PASSWORD || "postgres",
         database: "postgres",
         max: 20, // Número máximo de conexões no pool
         idleTimeoutMillis: 30000, // Tempo limite para liberar conexões inativas (30 segundos)
         connectionTimeoutMillis: 2000, // Tempo limite para aguardar uma conexão (2 segundos)
-        application_name: "hospede-ia", // Nome da aplicação para monitoramento
+        application_name: "ia-hub", // Nome da aplicação para monitoramento
         keepAlive: true, // Mantém conexões ativas
     });
 
@@ -63,7 +63,7 @@ export const processMessage = async ({ entry }) => {
                 );
             `;
             const res = await client.query(tableExistsQuery);
-            
+
             if (!res.rows[0].exists) {
                 // Create the embeddings table with the required schema
                 const createTableQuery = `
@@ -95,7 +95,7 @@ export const processMessage = async ({ entry }) => {
     const vectorStore = await PGVectorStore.initialize(embeddings, {
         postgresConnectionOptions: {
             type: "postgres",
-            host: "postgres",
+            host: process.env.DB_HOST || "postgres",
             port: 5432,
             user: "postgres",
             password: "postgres",
