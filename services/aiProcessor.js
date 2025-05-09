@@ -17,7 +17,12 @@ import { OpenAIEmbeddings } from "@langchain/openai";
  * @param {Object} message - Mensagem recebida contendo informações como texto e remetente.
  * @returns {Object} - Mensagem processada com resposta gerada e timestamp.
  */
+
+console.log("TESTE FORA", process.env.DB_HOST);
 export const processMessage = async ({ entry }) => {
+
+    console.log("TESTE DENTRO", process.env.DB_HOST);
+    
     // Configurações adicionais para tornar a conexão mais robusta em produção
     const pool = new pg.Pool({
         host: process.env.DB_HOST || "postgres",
