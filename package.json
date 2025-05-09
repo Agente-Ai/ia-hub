@@ -27,6 +27,8 @@
     "express": "^5.1.0",
     "langsmith": "^0.3.21",
     "pg": "^8.15.6",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^11.1.0"
   }
 }
