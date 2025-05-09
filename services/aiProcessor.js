@@ -1,7 +1,5 @@
-// Importa o módulo pg para conexão com o banco de dados PostgreSQL
 import pg from "pg";
 
-// Importa classes e funções do LangChain
 import {
     ChatPromptTemplate,
     MessagesPlaceholder,
@@ -37,60 +35,19 @@ const getPool = () => {
 };
 
 export const processMessage = async ({ entry }) => {
+    const value_message = entry?.[0]?.changes[0]?.value;
+    const message = value_message?.messages?.[0];
+    const metadata = value_message?.metadata;
+
+    console.log('Processing message', message);
+
     const pool = getPool();
-
-    const client = await pool.connect();
-    try {
-        await client.query(`SET statement_timeout = 5000;`);
-    } catch (err) {
-        console.error("Erro ao configurar statement_timeout", err);
-    } finally {
-        client.release();
-    }
-
-    const ensureEmbeddingsTable = async () => {
-        const client = await pool.connect();
-        try {
-            await client.query("SELECT pg_advisory_lock(424242);");
-            const res = await client.query(`
-                SELECT EXISTS (
-                    SELECT 1 FROM information_schema.tables 
-                    WHERE table_schema = 'public' AND table_name = 'embeddings'
-                );
-            `);
-
-            if (!res.rows[0].exists) {
-                await client.query(`
-                    CREATE TABLE IF NOT EXISTS embeddings (
-                        id TEXT PRIMARY KEY,
-                        content TEXT,
-                        metadata JSONB,
-                        vector vector(1536)
-                    );
-                `);
-            }
-        } catch (err) {
-            console.error("Error ensuring embeddings table:", err);
-            throw err;
-        } finally {
-            await client.query("SELECT pg_advisory_unlock(424242);");
-            client.release();
-        }
-    };
-
-    await ensureEmbeddingsTable();
 
     const embeddings = new OpenAIEmbeddings({ model: "text-embedding-3-small" });
 
     const vectorStore = await PGVectorStore.initialize(embeddings, {
-        postgresConnectionOptions: {
-            port: 5432,
-            type: "postgres",
-            database: "postgres",
-            host: process.env.DB_HOST || "postgres",
-            user: process.env.DB_USER || "postgres",
-            password: process.env.DB_PASSWORD || "postgres",
-        },
+        pool,
+        verbose: true,
         tableName: "embeddings",
         columns: {
             idColumnName: "id",
@@ -100,10 +57,6 @@ export const processMessage = async ({ entry }) => {
         },
         distanceStrategy: "cosine",
     });
-
-    const value_message = entry?.[0]?.changes[0]?.value;
-    const message = value_message?.messages?.[0];
-    const metadata = value_message?.metadata;
 
     const retriever = vectorStore.asRetriever({
         k: 3,
@@ -139,11 +92,38 @@ export const processMessage = async ({ entry }) => {
         },
         {
             configurable: {
+                callbacks: [
+                    {
+                        handleLLMStart: async (llm, inputs) => {
+                            console.log("LLM started:", { llm, inputs });
+                        },
+                        handleLLMEnd: async (output) => {
+                            console.log("LLM ended:", output);
+                        },
+                        handleChainStart: async (chain, inputs) => {
+                            console.log("Chain started:", { chain, inputs });
+                        },
+                        handleChainEnd: async (output) => {
+                            console.log("Chain ended:", output);
+                        },
+                        handleToolStart: async (tool, input) => {
+                            console.log("Tool started:", { tool, input });
+                        },
+                        handleToolEnd: async (output) => {
+                            console.log("Tool ended:", output);
+                        },
+                        handleError: async (err) => {
+                            console.error("Callback error:", err);
+                        },
+                    },
+                ],
                 thread_id: message.from,
                 sessionId: message.from,
             },
         }
     );
+
+    console.log("Retung LLM response", response.response_metadata);
 
     return {
         ...message,
