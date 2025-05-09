@@ -19,16 +19,11 @@ import { OpenAIEmbeddings } from "@langchain/openai";
  */
 export const processMessage = async ({ entry }) => {
     const pool = new pg.Pool({
-        host: process.env.DB_HOST || "postgres",
         port: 5432,
+        database: "postgres",
+        host: process.env.DB_HOST || "postgres",
         user: process.env.DB_USER || "postgres",
         password: process.env.DB_PASSWORD || "postgres",
-        database: "postgres",
-        max: 20,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
-        application_name: "ia-hub",
-        keepAlive: true,
     });
 
     pool.on("error", (err) => {
@@ -92,12 +87,12 @@ export const processMessage = async ({ entry }) => {
 
     const vectorStore = await PGVectorStore.initialize(embeddings, {
         postgresConnectionOptions: {
-            type: "postgres",
-            host: process.env.DB_HOST || "postgres",
             port: 5432,
-            user: "postgres",
-            password: "postgres",
+            type: "postgres",
             database: "postgres",
+            host: process.env.DB_HOST || "postgres",
+            user: process.env.DB_USER || "postgres",
+            password: process.env.DB_PASSWORD || "postgres",
         },
         tableName: "embeddings",
         columns: {
@@ -159,8 +154,8 @@ export const processMessage = async ({ entry }) => {
     await pool.end();
 
     return {
-        ...entry,
+        metadata,
+        ...message,
         text: { body: response.content },
-        timestamp: new Date().toISOString(),
     };
 };
