@@ -5,8 +5,17 @@ const router = express.Router();
 
 /**
  * @swagger
+ * tags:
+ *   - name: Embeddings
+ *     description: Operações relacionadas ao banco vetorial
+ */
+
+/**
+ * @swagger
  * /api/embeddings/{businessPhoneId}:
  *   post:
+ *     tags:
+ *       - Embeddings
  *     summary: Adiciona documentos ao banco vetorial
  *     parameters:
  *       - in: path
@@ -41,7 +50,10 @@ router.post("/:businessPhoneId", async (req, res) => {
         res.sendStatus(200);
     } catch (error) {
         console.error("Error adding documents to the vector database:", error);
-        res.status(500).json({ error: "Failed to add documents", details: error.message });
+        res.status(500).json({
+            error: "Failed to add documents",
+            details: error.message,
+        });
     }
 });
 
