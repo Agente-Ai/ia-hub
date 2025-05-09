@@ -18,18 +18,17 @@ import { OpenAIEmbeddings } from "@langchain/openai";
  * @returns {Object} - Mensagem processada com resposta gerada e timestamp.
  */
 export const processMessage = async ({ entry }) => {
-    // Configurações adicionais para tornar a conexão mais robusta em produção
     const pool = new pg.Pool({
         host: process.env.DB_HOST || "postgres",
         port: 5432,
         user: process.env.DB_USER || "postgres",
         password: process.env.DB_PASSWORD || "postgres",
         database: "postgres",
-        max: 20, // Número máximo de conexões no pool
-        idleTimeoutMillis: 30000, // Tempo limite para liberar conexões inativas (30 segundos)
-        connectionTimeoutMillis: 2000, // Tempo limite para aguardar uma conexão (2 segundos)
-        application_name: "ia-hub", // Nome da aplicação para monitoramento
-        keepAlive: true, // Mantém conexões ativas
+        max: 20,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+        application_name: "ia-hub",
+        keepAlive: true,
     });
 
     pool.on("error", (err) => {
@@ -37,10 +36,9 @@ export const processMessage = async ({ entry }) => {
         process.exit(-1);
     });
 
-    // Configurações adicionais para tempo limite de consultas
     const client = await pool.connect();
     try {
-        await client.query(`SET statement_timeout = 5000;`); // Tempo limite para consultas SQL (5 segundos)
+        await client.query(`SET statement_timeout = 5000;`);
     } catch (err) {
         console.error("Erro ao configurar statement_timeout", err);
         throw err;
@@ -52,30 +50,30 @@ export const processMessage = async ({ entry }) => {
     const ensureEmbeddingsTable = async () => {
         const client = await pool.connect();
         try {
-            // Enable the vector extension if it's not already enabled
-            await client.query('CREATE EXTENSION IF NOT EXISTS vector;');
+            // Trava para que apenas uma instância execute a criação
+            await client.query("SELECT pg_advisory_lock(424242);");
 
-            // Check if the table exists
-            const tableExistsQuery = `
+            // Verifica se a tabela já existe
+            const res = await client.query(`
                 SELECT EXISTS (
                     SELECT FROM information_schema.tables 
                     WHERE table_name = 'embeddings'
                 );
-            `;
-            const res = await client.query(tableExistsQuery);
+            `);
 
             if (!res.rows[0].exists) {
-                // Create the embeddings table with the required schema
-                const createTableQuery = `
+                await client.query(`
                     CREATE TABLE embeddings (
                         id TEXT PRIMARY KEY,
                         content TEXT,
                         metadata JSONB,
                         vector vector(1536)
                     );
-                `;
-                await client.query(createTableQuery);
+                `);
             }
+
+            // Libera o lock
+            await client.query("SELECT pg_advisory_unlock(424242);");
         } catch (err) {
             console.error("Error ensuring embeddings table:", err);
             throw err;
@@ -86,12 +84,10 @@ export const processMessage = async ({ entry }) => {
 
     await ensureEmbeddingsTable();
 
-    // Configura embeddings usando o modelo OpenAI
     const embeddings = new OpenAIEmbeddings({
         model: "text-embedding-3-small",
     });
 
-    // Inicializa o VectorStore para armazenar e recuperar vetores
     const vectorStore = await PGVectorStore.initialize(embeddings, {
         postgresConnectionOptions: {
             type: "postgres",
@@ -111,26 +107,22 @@ export const processMessage = async ({ entry }) => {
         distanceStrategy: "cosine",
     });
 
-    const value_message = entry?.[0]?.changes[0]?.value
-    const message = value_message?.messages?.[0]
-    const metadata = value_message?.metadata
+    const value_message = entry?.[0]?.changes[0]?.value;
+    const message = value_message?.messages?.[0];
+    const metadata = value_message?.metadata;
 
-    // Configura o retriever para buscar os documentos mais relevantes
     const retriever = vectorStore.asRetriever({ k: 3, filter: { businessPhoneId: metadata.display_phone_number } });
 
-    // Define o template do prompt para incluir contexto automaticamente
     const prompt = ChatPromptTemplate.fromMessages([
         new MessagesPlaceholder("chat_history"),
         ["system", "{context}"],
         ["human", "{input}"],
     ]);
 
-    // Configura o modelo de linguagem OpenAI
     const model = new ChatOpenAI({
         temperature: 0,
     });
 
-    // Cria um "runnable" que primeiro realiza a busca e depois processa o prompt
     const ragChain = RunnablePassthrough.assign({
         context: async (input) => {
             const docs = await retriever.invoke(input.input);
@@ -138,7 +130,6 @@ export const processMessage = async ({ entry }) => {
         },
     }).pipe(prompt).pipe(model);
 
-    // Adiciona histórico de mensagens ao "runnable"
     const chainWithHistory = new RunnableWithMessageHistory({
         runnable: ragChain,
         inputMessagesKey: "input",
@@ -151,7 +142,6 @@ export const processMessage = async ({ entry }) => {
         },
     });
 
-    // Processa a mensagem recebida e gera uma resposta
     const response = await chainWithHistory.invoke(
         {
             input: message.text.body,
@@ -164,10 +154,8 @@ export const processMessage = async ({ entry }) => {
         }
     );
 
-    // Encerra o pool de conexões com o banco de dados
     await pool.end();
 
-    // Retorna a mensagem processada com a resposta gerada e o timestamp
     return {
         ...message,
         text: { body: response.content },
