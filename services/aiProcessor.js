@@ -159,7 +159,7 @@ export const processMessage = async ({ entry }) => {
     await pool.end();
 
     return {
-        ...message,
+        ...entry,
         text: { body: response.content },
         timestamp: new Date().toISOString(),
     };
