@@ -46,24 +46,26 @@ export const processMessage = async ({ entry }) => {
         client.release();
     }
 
-    // Check if the embeddings table exists and create it if it doesn't
+    // Função para garantir a criação da tabela 'embeddings'
     const ensureEmbeddingsTable = async () => {
         const client = await pool.connect();
         try {
             // Trava para que apenas uma instância execute a criação
             await client.query("SELECT pg_advisory_lock(424242);");
 
-            // Verifica se a tabela já existe
+            // Verifica se a tabela 'embeddings' já existe no schema 'public'
             const res = await client.query(`
                 SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
-                    WHERE table_name = 'embeddings'
+                    SELECT 1
+                    FROM information_schema.tables 
+                    WHERE table_schema = 'public' AND table_name = 'embeddings'
                 );
             `);
 
             if (!res.rows[0].exists) {
+                // Cria a tabela 'embeddings' caso não exista
                 await client.query(`
-                    CREATE TABLE embeddings (
+                    CREATE TABLE IF NOT EXISTS embeddings (
                         id TEXT PRIMARY KEY,
                         content TEXT,
                         metadata JSONB,
