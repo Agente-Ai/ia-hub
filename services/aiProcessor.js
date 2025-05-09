@@ -1,5 +1,4 @@
 import pg from "pg";
-
 import {
     ChatPromptTemplate,
     MessagesPlaceholder,
@@ -15,8 +14,12 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 
 let sharedPool;
 
+const log = (...args) => console.log(`[${new Date().toISOString()}]`, ...args);
+const error = (...args) => console.error(`[${new Date().toISOString()}]`, ...args);
+
 const getPool = () => {
     if (!sharedPool) {
+        log("Creating new Postgres pool...");
         sharedPool = new pg.Pool({
             port: 5432,
             database: "postgres",
@@ -28,7 +31,7 @@ const getPool = () => {
         });
 
         sharedPool.on("error", (err) => {
-            console.error("Unexpected error on idle client", err);
+            error("Unexpected error on idle client", err);
         });
     }
     return sharedPool;
@@ -39,12 +42,18 @@ export const processMessage = async ({ entry }) => {
     const message = value_message?.messages?.[0];
     const metadata = value_message?.metadata;
 
-    console.log('Processing message', message);
+    log("Received new message:", {
+        from: message?.from,
+        text: message?.text?.body,
+        phone_number_id: metadata?.phone_number_id,
+    });
 
     const pool = getPool();
 
+    log("Initializing OpenAI embeddings...");
     const embeddings = new OpenAIEmbeddings({ model: "text-embedding-3-small" });
 
+    log("Setting up PGVectorStore...");
     const vectorStore = await PGVectorStore.initialize(embeddings, {
         pool,
         verbose: true,
@@ -56,6 +65,10 @@ export const processMessage = async ({ entry }) => {
             metadataColumnName: "metadata",
         },
         distanceStrategy: "cosine",
+    });
+
+    log("Creating retriever with filter:", {
+        businessPhoneId: metadata.display_phone_number,
     });
 
     const retriever = vectorStore.asRetriever({
@@ -73,7 +86,9 @@ export const processMessage = async ({ entry }) => {
 
     const ragChain = RunnablePassthrough.assign({
         context: async (input) => {
+            log("Fetching relevant documents for input:", input.input);
             const docs = await retriever.invoke(input.input);
+            log("Retrieved docs:", docs.map(d => d.metadata?.id || "[no id]"));
             return docs.map((doc) => doc.pageContent).join("\n\n");
         },
     }).pipe(prompt).pipe(model);
@@ -82,9 +97,13 @@ export const processMessage = async ({ entry }) => {
         runnable: ragChain,
         inputMessagesKey: "input",
         historyMessagesKey: "chat_history",
-        getMessageHistory: async (sessionId) =>
-            new PostgresChatMessageHistory({ sessionId, pool }),
+        getMessageHistory: async (sessionId) => {
+            log("Loading chat history for session:", sessionId);
+            return new PostgresChatMessageHistory({ sessionId, pool });
+        },
     });
+
+    log("Invoking chain with input:", message.text.body);
 
     const response = await chainWithHistory.invoke(
         {
@@ -95,25 +114,25 @@ export const processMessage = async ({ entry }) => {
                 callbacks: [
                     {
                         handleLLMStart: async (llm, inputs) => {
-                            console.log("LLM started:", { llm, inputs });
+                            log("LLM execution started:", { llm, inputs });
                         },
                         handleLLMEnd: async (output) => {
-                            console.log("LLM ended:", output);
+                            log("LLM execution ended:", output);
                         },
                         handleChainStart: async (chain, inputs) => {
-                            console.log("Chain started:", { chain, inputs });
+                            log("Chain execution started:", { chain, inputs });
                         },
                         handleChainEnd: async (output) => {
-                            console.log("Chain ended:", output);
+                            log("Chain execution ended:", output);
                         },
                         handleToolStart: async (tool, input) => {
-                            console.log("Tool started:", { tool, input });
+                            log("Tool started:", { tool, input });
                         },
                         handleToolEnd: async (output) => {
-                            console.log("Tool ended:", output);
+                            log("Tool ended:", output);
                         },
                         handleError: async (err) => {
-                            console.error("Callback error:", err);
+                            error("Callback error:", err);
                         },
                     },
                 ],
@@ -123,7 +142,10 @@ export const processMessage = async ({ entry }) => {
         }
     );
 
-    console.log("Retung LLM response", response.response_metadata);
+    log("Returning LLM response:", {
+        response: response.content,
+        metadata: response.response_metadata,
+    });
 
     return {
         ...message,
