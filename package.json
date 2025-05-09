@@ -1,0 +1,31 @@
+{
+  "name": "ia-hub",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Agente-Ai/ia-hub.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Agente-Ai/ia-hub/issues"
+  },
+  "homepage": "https://github.com/Agente-Ai/ia-hub#readme",
+  "dependencies": {
+    "@langchain/community": "^0.3.41",
+    "@langchain/core": "^0.3.49",
+    "@langchain/openai": "^0.5.7",
+    "amqplib": "^0.10.7",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "langsmith": "^0.3.21",
+    "pg": "^8.15.6",
+    "uuid": "^11.1.0"
+  }
+}
