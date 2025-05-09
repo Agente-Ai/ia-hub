@@ -154,8 +154,8 @@ export const processMessage = async ({ entry }) => {
     await pool.end();
 
     return {
-        metadata,
         ...message,
         text: { body: response.content },
+        phone_number_id: metadata.phone_number_id,
     };
 };
