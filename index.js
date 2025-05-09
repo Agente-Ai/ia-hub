@@ -42,6 +42,8 @@ app.listen(process.env.PORT || 4000, () => {
 
                 const entry = JSON.parse(msg.content.toString());
 
+                console.log("New msg: ", entry);
+
                 // Process the message using the IA module
                 const processedMessageContent = await processMessage(entry);
 
