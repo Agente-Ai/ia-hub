@@ -25,26 +25,43 @@ const required = (name) => {
 
 const getPool = () => {
     if (!sharedPool) {
-        log("Creating new Postgres pool...");
-
-        sharedPool = new pg.Pool({
+        const config = {
             host: required("DB_HOST"),
             user: required("DB_USER"),
             password: required("DB_PASSWORD"),
             database: required("DB_NAME"),
             port: Number(process.env.DB_PORT || 5432),
-            max: Number(process.env.DB_MAX_CONNECTIONS || 10),
+            max: Number(process.env.DB_MAX_CONNECTIONS || 20),
             idleTimeoutMillis: 10000,
-            connectionTimeoutMillis: 5000,
+            connectionTimeoutMillis: 10000,
             ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
+        };
+
+        log("Iniciando conexão com Postgres:", {
+            host: config.host,
+            user: config.user,
+            database: config.database,
+            port: config.port,
         });
+
+        sharedPool = new pg.Pool(config);
 
         sharedPool.on("error", (err) => {
-            error("Unexpected error on idle client", err);
+            error("Erro inesperado no pool Postgres:", err);
         });
 
+        sharedPool.connect()
+            .then((client) => {
+                log("Conexão com Postgres estabelecida.");
+                client.release();
+            })
+            .catch((err) => {
+                error("Falha ao conectar com Postgres:", err.message);
+                process.exit(1);
+            });
+
         process.on("SIGINT", async () => {
-            log("Gracefully shutting down Postgres pool...");
+            log("Encerrando pool Postgres...");
             await sharedPool.end();
             process.exit(0);
         });
@@ -67,7 +84,7 @@ export const processMessage = async ({ entry }) => {
     const message = value_message?.messages?.[0];
     const metadata = value_message?.metadata;
 
-    log("Received new message:", {
+    log("Mensagem recebida:", {
         from: message?.from,
         text: message?.text?.body,
         phone_number_id: metadata?.phone_number_id,
@@ -105,9 +122,9 @@ export const processMessage = async ({ entry }) => {
 
     const ragChain = RunnablePassthrough.assign({
         context: async (input) => {
-            log("Fetching relevant documents for input:", input.input);
+            log("Buscando documentos para:", input.input);
             const docs = await retriever.invoke(input.input);
-            log("Retrieved docs:", docs.map((d) => d.metadata?.id || "[no id]"));
+            log("Docs recuperados:", docs.map((d) => d.metadata?.id || "[sem id]"));
             return docs.map((doc) => doc.pageContent).join("\n\n");
         },
     }).pipe(prompt).pipe(model);
@@ -117,12 +134,12 @@ export const processMessage = async ({ entry }) => {
         inputMessagesKey: "input",
         historyMessagesKey: "chat_history",
         getMessageHistory: async (sessionId) => {
-            log("Loading chat history for session:", sessionId);
+            log("Carregando histórico para sessão:", sessionId);
             return new PostgresChatMessageHistory({ sessionId, pool });
         },
     });
 
-    log("Invoking chain with input:", message.text.body);
+    log("Executando chain com:", message.text.body);
 
     const response = await chainWithHistory.invoke(
         { input: message.text.body },
@@ -130,13 +147,13 @@ export const processMessage = async ({ entry }) => {
             configurable: {
                 callbacks: [
                     {
-                        handleLLMStart: async (llm, inputs) => log("LLM started:", { llm, inputs }),
-                        handleLLMEnd: async (output) => log("LLM ended:", output),
-                        handleChainStart: async (chain, inputs) => log("Chain started:", { chain, inputs }),
-                        handleChainEnd: async (output) => log("Chain ended:", output),
-                        handleToolStart: async (tool, input) => log("Tool started:", { tool, input }),
-                        handleToolEnd: async (output) => log("Tool ended:", output),
-                        handleError: async (err) => error("Callback error:", err),
+                        handleLLMStart: async (llm, inputs) => log("LLM começou:", { llm, inputs }),
+                        handleLLMEnd: async (output) => log("LLM terminou:", output),
+                        handleChainStart: async (chain, inputs) => log("Chain começou:", { chain, inputs }),
+                        handleChainEnd: async (output) => log("Chain terminou:", output),
+                        handleToolStart: async (tool, input) => log("Tool começou:", { tool, input }),
+                        handleToolEnd: async (output) => log("Tool terminou:", output),
+                        handleError: async (err) => error("Erro no callback:", err),
                     },
                 ],
                 thread_id: message.from,
@@ -145,7 +162,7 @@ export const processMessage = async ({ entry }) => {
         }
     );
 
-    log("Returning LLM response:", {
+    log("Resposta do modelo:", {
         response: response.content,
         metadata: response.response_metadata,
     });
