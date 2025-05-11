@@ -5,7 +5,7 @@ const log = (...args) => console.log(`[${new Date().toISOString()}]`, ...args);
 
 export class VectorStoreService {
     #pool;
-    
+
     constructor(pool) {
         this.#pool = pool;
     }
@@ -29,6 +29,14 @@ export class VectorStoreService {
         return vectorStore.asRetriever({
             k: 10,
             filter: { businessPhoneId },
+            verbose: true,
+            callbacks: [
+                {
+                    handleLLMNewToken(token) {
+                        log("Token gerado:", token);
+                    },
+                },
+            ],
         });
     }
 }
