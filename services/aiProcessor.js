@@ -59,6 +59,8 @@ export const processMessage = async ({ entry }) => {
                 text: { body: response.content },
             },
             phone_number_id: metadata.phone_number_id,
+            display_phone_number: metadata.display_phone_number,
+            whatsapp_business_account_id: metadata.whatsapp_business_account_id,
         };
     } catch (err) {
         error("Erro ao processar mensagem:", err);
