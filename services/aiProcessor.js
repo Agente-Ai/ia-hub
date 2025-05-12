@@ -6,7 +6,7 @@ import { ChatService } from './ai/ChatService.js';
 const log = (...args) => console.log(`[${new Date().toISOString()}]`, ...args);
 const error = (...args) => console.error(`[${new Date().toISOString()}]`, ...args);
 
-export const processMessage = async ({ object }) => {
+export const processMessage = async (object) => {
     try {
         log("Iniciando processamento da mensagem...", object);
 
