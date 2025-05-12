@@ -8,7 +8,8 @@ const error = (...args) => console.error(`[${new Date().toISOString()}]`, ...arg
 
 export const processMessage = async ({ entry }) => {
     try {
-        const value_message = entry?.[0]?.changes[0]?.value;
+        const entry = entry?.[0];
+        const value_message = entry?.changes[0]?.value;
         const message = value_message?.messages?.[0];
         const metadata = value_message?.metadata;
 
@@ -60,7 +61,7 @@ export const processMessage = async ({ entry }) => {
             },
             phone_number_id: metadata.phone_number_id,
             display_phone_number: metadata.display_phone_number,
-            whatsapp_business_account_id: metadata.whatsapp_business_account_id,
+            whatsapp_business_account_id: entry.id,
         };
     } catch (err) {
         error("Erro ao processar mensagem:", err);
