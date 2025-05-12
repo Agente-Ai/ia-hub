@@ -6,11 +6,11 @@ import { ChatService } from './ai/ChatService.js';
 const log = (...args) => console.log(`[${new Date().toISOString()}]`, ...args);
 const error = (...args) => console.error(`[${new Date().toISOString()}]`, ...args);
 
-export const processMessage = async ({ entries }) => {
+export const processMessage = async ({ object }) => {
     try {
-        log("Iniciando processamento da mensagem...", entries);
+        log("Iniciando processamento da mensagem...", object);
 
-        const entry = entries?.[0];
+        const entry = object?.entry?.[0];
         const value_message = entry?.changes[0]?.value;
         const message = value_message?.messages?.[0];
         const metadata = value_message?.metadata;
