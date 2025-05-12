@@ -16,7 +16,9 @@ export const processMessage = async ({ entries }) => {
         log("Mensagem recebida:", {
             from: message?.from,
             text: message?.text?.body,
+            whatsapp_business_account_id: entry?.id,
             phone_number_id: metadata?.phone_number_id,
+            display_phone_number: metadata?.display_phone_number,
         });
 
         // Inicializa as conexões e serviços
