@@ -8,6 +8,8 @@ const error = (...args) => console.error(`[${new Date().toISOString()}]`, ...arg
 
 export const processMessage = async ({ entries }) => {
     try {
+        log("Iniciando processamento da mensagem...", entries);
+
         const entry = entries?.[0];
         const value_message = entry?.changes[0]?.value;
         const message = value_message?.messages?.[0];
