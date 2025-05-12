@@ -6,9 +6,9 @@ import { ChatService } from './ai/ChatService.js';
 const log = (...args) => console.log(`[${new Date().toISOString()}]`, ...args);
 const error = (...args) => console.error(`[${new Date().toISOString()}]`, ...args);
 
-export const processMessage = async ({ entry }) => {
+export const processMessage = async ({ entries }) => {
     try {
-        const entry = entry?.[0];
+        const entry = entries?.[0];
         const value_message = entry?.changes[0]?.value;
         const message = value_message?.messages?.[0];
         const metadata = value_message?.metadata;
