@@ -15,7 +15,7 @@ export class EmbeddingsService {
                 port: 5432,
                 user: process.env.DB_USER || "postgres",
                 password: process.env.DB_PASSWORD || "postgres",
-                database: "postgres",
+                database: process.env.DB_NAME || "postgres",
             },
             tableName: "embeddings",
             columns: {
@@ -39,6 +39,6 @@ export class EmbeddingsService {
 
         const ids = documents.map(() => uuidv4());
 
-        await vectorStore.addDocuments(documents, { ids: ids });
+        await vectorStore.addDocuments(documents, { ids });
     }
 }
