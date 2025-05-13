@@ -43,14 +43,7 @@ app.listen(process.env.PORT || 4000, () => {
                 const entry = JSON.parse(msg.content.toString());
 
                 // Process the message using the IA module
-                const processedMessageContent = await processMessage(entry);
-
-                // Process the message (example: add a processed flag)
-                const processedMessage = {
-                    ...processedMessageContent,
-                    processed: true,
-                    timestamp: new Date().toISOString(),
-                };
+                const processedMessage = await processMessage(entry);
 
                 // Publish the processed message to the output queue
                 channel.sendToQueue(OUTPUT_QUEUE, Buffer.from(JSON.stringify(processedMessage)), {
