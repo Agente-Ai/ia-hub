@@ -50,7 +50,7 @@ export const processMessage = async (object) => {
         const response = await chatService.processUserMessage(
             chainWithHistory,
             message.text.body,
-            `${message.from} - ${display_phone_number}`,
+            `${message.from} - ${metadata.display_phone_number}`,
         );
 
         log("Resposta do modelo:", {
