@@ -57,4 +57,59 @@ router.post("/:businessPhoneId", async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/embeddings/{businessPhoneId}:
+ *   get:
+ *     tags:
+ *       - Embeddings
+ *     summary: Lista documentos do banco vetorial por telefone comercial
+ *     parameters:
+ *       - in: path
+ *         name: businessPhoneId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID do telefone comercial
+ *     responses:
+ *       200:
+ *         description: Lista de documentos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     description: ID único do documento
+ *                   content:
+ *                     type: string
+ *                     description: Conteúdo do documento
+ *                   metadata:
+ *                     type: object
+ *                     properties:
+ *                       businessPhoneId:
+ *                         type: string
+ *                         description: ID do telefone comercial associado
+ *       500:
+ *         description: Erro ao listar documentos
+ */
+router.get("/:businessPhoneId", async (req, res) => {
+    const embeddingsService = new EmbeddingsService();
+    const { businessPhoneId } = req.params;
+
+    try {
+        const documents = await embeddingsService.listDocumentsByBusinessPhone(businessPhoneId);
+        res.status(200).json(documents);
+    } catch (error) {
+        console.error("Error listing documents from the vector database:", error);
+        res.status(500).json({
+            error: "Failed to list documents",
+            details: error.message,
+        });
+    }
+});
+
 export default router;
