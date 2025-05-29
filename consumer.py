@@ -7,7 +7,10 @@ import json
 import pika
 import logging
 import threading
+from dotenv import load_dotenv
 from agent_service import process_and_publish
+
+load_dotenv()
 
 RABBITMQ_INPUT_QUEUE = os.getenv("RABBITMQ_INPUT_QUEUE", "incoming.messages")
 RABBITMQ_OUTPUT_QUEUE = os.getenv("RABBITMQ_OUTPUT_QUEUE", "messages.to_send")
