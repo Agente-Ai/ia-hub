@@ -36,10 +36,27 @@ def __parse_owner_id_from_argv():
     return None
 
 
+def __parse_document_from_argv():
+    """
+    Busca o parâmetro --document="texto do documento" na linha de comando.
+    """
+    for arg in sys.argv:
+        if arg.startswith("--document="):
+            return arg.split("=", 1)[1]
+    return None
+
+
 if __name__ == "__main__":
     owner_id_from_argv = __parse_owner_id_from_argv()
-    __load_documents_to_knowledge_base(
-        owner_id=owner_id_from_argv,
-        documents=["Possuimos 7 travesseiros por cada quarto."],
-    )
-    print(f"Documentos de exemplo carregados para owner_id={owner_id_from_argv}.")
+    document_from_argv = __parse_document_from_argv()
+    if owner_id_from_argv and document_from_argv:
+        __load_documents_to_knowledge_base(
+            owner_id=owner_id_from_argv,
+            documents=[document_from_argv],
+        )
+        print(f"Documento carregado para owner_id={owner_id_from_argv}:")
+        print(document_from_argv)
+    else:
+        print("Uso: python knowledge_manager.py --owner_id=ID --document='texto'")
+
+# python knowledge_manager.py --owner_id=SEU_ID --document="Seu texto do documento aqui"
