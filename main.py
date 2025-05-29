@@ -4,7 +4,7 @@ from agent_runner import AgentRunner
 def main():
     """Função principal para executar o agente."""
     # Criar o runner do agente
-    runner = AgentRunner(thread_id="abc123")
+    runner = AgentRunner()
 
     # Iniciar chat interativo
     runner.chat_interactive()

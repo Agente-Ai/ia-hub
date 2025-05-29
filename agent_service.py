@@ -26,7 +26,7 @@ def process_and_publish(user_message):
 
     thread_id = f"{display_phone_number}.{wa_id}"
 
-    runner = AgentRunner(thread_id=thread_id)
+    runner = AgentRunner(thread_id=thread_id, owner_id=display_phone_number)
     responses = runner.chat_single(user_message)
 
     body = responses.get("messages")[-1].content

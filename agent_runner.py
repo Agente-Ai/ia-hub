@@ -5,9 +5,15 @@ from agent_config import get_checkpointer, create_agent_executor
 class AgentRunner:
     """Classe para executar o agente de forma interativa."""
 
-    def __init__(self, thread_id="default_thread"):
+    def __init__(self, thread_id="default_thread", owner_id="default_owner"):
+        self.owner_id = owner_id
         self.thread_id = thread_id
-        self.config = {"configurable": {"thread_id": self.thread_id}}
+        self.config = {
+            "configurable": {
+                "thread_id": self.thread_id,
+                "owner_id": self.owner_id,
+            }
+        }
 
     def chat_single(self, payload: dict):
         """Executa uma única mensagem e retorna a resposta."""
