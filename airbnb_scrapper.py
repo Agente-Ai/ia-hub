@@ -10,20 +10,24 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 def __setup_driver():
-    options = Options()
+    try:
+        options = Options()
 
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
 
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=options)
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
 
-    WebDriverWait(driver, 15).until(
-        EC.presence_of_element_located((By.TAG_NAME, "body"))
-    )
+        WebDriverWait(driver, 15).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
 
-    return driver
+        return driver
+    except Exception as e:
+        print(f"❌ Ocorreu um erro ao configurar o driver: {e}")
+        raise
 
 
 def __extrair_titulo(driver):
