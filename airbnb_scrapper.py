@@ -133,6 +133,11 @@ def __scroll_until_price(driver, timeout=20):
     return False
 
 
+def __get_room_id(config):
+    logger.info("Obtendo ID do quarto a partir da configuração...")
+    return "769729843373520689"
+
+
 def initialize_airbnb_scraper(**kwargs):
     logger.info("Iniciando scraping do Airbnb...")
     driver = __setup_driver()
@@ -141,7 +146,10 @@ def initialize_airbnb_scraper(**kwargs):
         check_out = kwargs.get("check_out")
         guests = kwargs.get("guests", 1)
         adults = kwargs.get("adults", 1)
-        room_id = "769729843373520689"
+        config = kwargs.get("config", {})
+
+        room_id = __get_room_id(config)
+
         url = (
             f"https://www.airbnb.com.br/rooms/{room_id}?"
             f"check_in={check_in}&check_out={check_out}"
