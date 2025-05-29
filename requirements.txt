@@ -2,6 +2,7 @@ ipython
 langgraph
 langsmith
 langchain[openai]
+langchain_postgres
 langchain_community
 
 psycopg
