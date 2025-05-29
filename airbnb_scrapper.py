@@ -1,36 +1,40 @@
 import time
+import logging
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def __setup_driver():
     try:
         options = Options()
-        options.add_argument("--headless")
+
+        options.binary_location = "/usr/bin/google-chrome"
+        options.add_argument("--headless=new")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--remote-debugging-port=9222")
-        service = Service("/usr/bin/chromedriver")
-        driver = webdriver.Chrome(service=service, options=options)
+
+        driver = webdriver.Chrome(options=options)
+
         WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
+
         return driver
     except Exception as e:
-        import logging
-
-        logging.basicConfig(level=logging.ERROR)
-        logging.error(f"❌ Ocorreu um erro ao configurar o driver: {e}")
+        logger.error(f"❌ Ocorreu um erro ao configurar o driver: {e}")
         if hasattr(e, "msg"):
-            logging.error(f"Mensagem do erro: {e.msg}")
+            logger.error(f"Mensagem do erro: {e.msg}")
         if hasattr(e, "stacktrace"):
-            logging.error(f"Stacktrace: {e.stacktrace}")
+            logger.error(f"Stacktrace: {e.stacktrace}")
         raise
 
 
