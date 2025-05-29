@@ -1,14 +1,15 @@
 import os
+import sys
 from typing import List
 from langchain_openai import OpenAIEmbeddings
 from langchain_postgres.vectorstores import PGVector
 
 
-def load_documents_to_knowledge_base(
+def __load_documents_to_knowledge_base(
+    owner_id: str,
     documents: List[str],
     embedding_model: str = "text-embedding-3-large",
     use_jsonb: bool = True,
-    owner_id: str = None,
 ) -> None:
     """
     Carrega uma lista de documentos (strings) na base de conhecimento (tabela knowledge)
@@ -25,17 +26,20 @@ def load_documents_to_knowledge_base(
     vector_store.add_texts(documents, metadatas=metadatas)
 
 
-def load_example_documents():
+def __parse_owner_id_from_argv():
     """
-    Exemplo de uso: carrega documentos de exemplo na base de conhecimento.
+    Busca o parâmetro --owner_id=xxxxxx na linha de comando.
     """
-    example_docs = [
-        "Possuimos 7 travesseiros por cada quarto.",
-    ]
-
-    load_documents_to_knowledge_base(example_docs, owner_id="default_owner")
+    for arg in sys.argv:
+        if arg.startswith("--owner_id="):
+            return arg.split("=", 1)[1]
+    return None
 
 
 if __name__ == "__main__":
-    load_example_documents()
-    print("Documentos de exemplo carregados na base de conhecimento.")
+    owner_id_from_argv = __parse_owner_id_from_argv()
+    __load_documents_to_knowledge_base(
+        owner_id=owner_id_from_argv,
+        documents=["Possuimos 7 travesseiros por cada quarto."],
+    )
+    print(f"Documentos de exemplo carregados para owner_id={owner_id_from_argv}.")
