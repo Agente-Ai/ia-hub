@@ -69,9 +69,30 @@ def initialize_airbnb_scraper(**kwargs):
     try:
         driver = __setup_driver()
 
+        config = kwargs.get("config", {})
+        check_in = kwargs.get("check_in")
+        check_out = kwargs.get("check_out")
+        guests = kwargs.get("guests", 1)
+        adults = kwargs.get("adults", 1)
+        metadata = config.get("metadata", {})
+        thread_id = metadata.get("thread_id")
+
+        print("Checking availability for:")
+        print(f"  Check-in: {check_in}")
+        print(f"  Check-out: {check_out}")
+        print(f"  Guests: {guests}")
+        print(f"  Adults: {adults}")
+        print(f"  Thread ID: {thread_id}")
+        print(f"  Config: {config}")
+
+        # TODO: Obter o room_id dinamicamente, se possível
+        # Através do thread_id ou de outra forma
+
+        room_id = "769729843373520689"
+
         # URL com os parâmetros fornecidos via linha de comando
         url = (
-            f"https://www.airbnb.com.br/rooms/{kwargs['id']}?"
+            f"https://www.airbnb.com.br/rooms/{room_id}?"
             f"check_in={kwargs['check_in']}&check_out={kwargs['check_out']}"
             f"&adults={kwargs['adults']}"
         )

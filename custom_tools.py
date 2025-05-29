@@ -9,6 +9,8 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_core.runnables import RunnableConfig
 from langchain_postgres.vectorstores import PGVector
 
+from airbnb_scrapper import initialize_airbnb_scraper
+
 
 @tool
 def retrieve_availability_and_prices(
@@ -20,19 +22,12 @@ def retrieve_availability_and_prices(
     adults: int = 1,
 ) -> str:
     """Retrieve availability and prices for a given date range and number of guests."""
-    print(f"Checking availability for:")
-    print(f"  Check-in: {check_in}")
-    print(f"  Check-out: {check_out}")
-    print(f"  Guests: {guests}")
-    print(f"  Adults: {adults}")
-    print(f"  Configurable: {config}")
-
-    metadata = config.get("metadata", {})
-    thread_id = metadata.get("thread_id")
-
-    # Mocked response
-
-    return "Mocked availability and prices for the given dates and guests."
+    return initialize_airbnb_scraper(
+        check_in=check_in.strftime("%Y-%m-%d"),
+        check_out=check_out.strftime("%Y-%m-%d"),
+        adults=adults,
+        config=config,
+    )
 
 
 @tool()
