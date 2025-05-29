@@ -12,21 +12,24 @@ from selenium.webdriver.support import expected_conditions as EC
 def __setup_driver():
     try:
         options = Options()
-
         options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
-
         WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-
         return driver
     except Exception as e:
-        print(f"❌ Ocorreu um erro ao configurar o driver: {e}")
+        import logging
+
+        logging.basicConfig(level=logging.ERROR)
+        logging.error(f"❌ Ocorreu um erro ao configurar o driver: {e}")
+        if hasattr(e, "msg"):
+            logging.error(f"Mensagem do erro: {e.msg}")
+        if hasattr(e, "stacktrace"):
+            logging.error(f"Stacktrace: {e.stacktrace}")
         raise
 
 
@@ -96,7 +99,9 @@ def __verificar_disponibilidade(driver):
 
 
 def __scroll_until_price(driver, timeout=10):
-    """Rola a página até encontrar um texto com 'R$' ou até atingir o timeout"""
+    """
+    Rola a página até encontrar um texto com 'R$' ou até atingir o timeout
+    """
     start_time = time.time()
     last_height = driver.execute_script("return document.body.scrollHeight")
 
