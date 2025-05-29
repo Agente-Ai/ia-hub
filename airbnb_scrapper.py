@@ -35,25 +35,39 @@ def __extrair_titulo(driver):
 
 
 def __extrair_preco_total(driver):
-    # Busca spans com "R$"
-    spans = driver.find_elements(By.XPATH, "//span[contains(text(),'R$')]")
+    # Tenta esperar explicitamente por qualquer elemento com 'R$' no texto
+    try:
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//*[contains(text(),'R$')]"))
+        )
+    except Exception:
+        pass  # Continua mesmo se não encontrar explicitamente
+
+    # Busca spans, divs, buttons, strong, etc. com 'R$'
+    elementos = driver.find_elements(By.XPATH, "//*[contains(text(),'R$')]")
     preco_total = None
+    textos_debug = []
 
     # Procura o preço com informação de noites (mais completo)
-    for span in spans:
-        texto = span.text.strip()
+    for elem in elementos:
+        texto = elem.text.strip()
+        textos_debug.append(texto)
         if "noite" in texto and "R$" in texto:
             preco_total = texto
             break
 
     # Se não encontrou preço com noites, procura outros valores
     if not preco_total:
-        # No Airbnb atual, o total geralmente não tem a palavra "Total"
-        for span in spans:
-            texto = span.text.strip()
+        for texto in textos_debug:
             if "R$" in texto and "noite" not in texto:
                 preco_total = texto
                 break
+
+    # Debug: imprime todos os textos encontrados com 'R$'
+    if not preco_total:
+        print("[DEBUG] Nenhum preço encontrado. Textos:")
+        for t in textos_debug:
+            print(t)
 
     return preco_total
 
@@ -75,6 +89,29 @@ def __verificar_disponibilidade(driver):
 
     # Se não encontrou nenhuma das mensagens, está disponível
     return len(indisponivel) == 0, mensagem_indisponivel
+
+
+def __scroll_until_price(driver, timeout=10):
+    """Rola a página até encontrar um texto com 'R$' ou até atingir o timeout"""
+    start_time = time.time()
+    last_height = driver.execute_script("return document.body.scrollHeight")
+
+    while time.time() - start_time < timeout:
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)  # dá tempo pro JS carregar conteúdo
+
+        # Verifica se apareceu algum elemento com 'R$'
+        elementos = driver.find_elements(By.XPATH, "//*[contains(text(),'R$')]")
+        if elementos:
+            return True
+
+        # Verifica se chegou ao fim da página (sem crescimento)
+        new_height = driver.execute_script("return document.body.scrollHeight")
+        if new_height == last_height:
+            break
+        last_height = new_height
+
+    return False
 
 
 def initialize_airbnb_scraper(**kwargs):
@@ -103,7 +140,7 @@ def initialize_airbnb_scraper(**kwargs):
         )
         driver.get(url)
 
-        time.sleep(6)
+        __scroll_until_price(driver)
 
         # Obtém as informações
         titulo = __extrair_titulo(driver)
