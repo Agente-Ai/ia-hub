@@ -26,6 +26,7 @@ def retrieve_availability_and_prices(
         check_in=check_in.strftime("%Y-%m-%d"),
         check_out=check_out.strftime("%Y-%m-%d"),
         adults=adults,
+        guests=guests,
         config=config,
     )
 
