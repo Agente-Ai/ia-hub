@@ -52,9 +52,13 @@ def __setup_driver():
 def __extrair_titulo(driver):
     logger.info("Extraindo título do anúncio...")
     try:
-        titulo = driver.find_element(By.TAG_NAME, "h1").text.strip()
-        logger.info(f"Título encontrado: {titulo}")
-        return titulo
+        while True:
+            titulo = driver.find_element(By.TAG_NAME, "h1").text.strip()
+            if titulo != "Ajude-nos a melhorar sua experiência":
+                logger.info(f"Título encontrado: {titulo}")
+                return titulo
+            logger.info("Página ainda não carregou o título correto. Aguardando...")
+            time.sleep(1)
     except Exception as e:
         logger.warning(f"Título não encontrado: {e}")
         return "⚠️ Título não encontrado"
@@ -106,17 +110,19 @@ def __verificar_disponibilidade(driver):
     return len(indisponivel) == 0, mensagem_indisponivel
 
 
-def __scroll_until_price(driver, timeout=10):
-    logger.info("Rolando página até encontrar preço ou timeout...")
+def __scroll_until_price(driver, timeout=20):
+    logger.info("Rolando página até encontrar preço com 'por x noites' ou timeout...")
     start_time = time.time()
     last_height = driver.execute_script("return document.body.scrollHeight")
     while time.time() - start_time < timeout:
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         logger.debug("Scroll realizado até o final da página.")
         time.sleep(2)
-        elementos = driver.find_elements(By.XPATH, "//*[contains(text(),'R$')]")
+        elementos = driver.find_elements(
+            By.XPATH, "//*[contains(text(),'por') and contains(text(),'noite')]"
+        )
         if elementos:
-            logger.info("Elemento de preço encontrado durante o scroll.")
+            logger.info("Elemento de preço com 'por x noites' encontrado.")
             return True
         new_height = driver.execute_script("return document.body.scrollHeight")
         if new_height == last_height:
