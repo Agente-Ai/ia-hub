@@ -2,15 +2,27 @@ import time
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support import expected_conditions as EC
 
 
 def __setup_driver():
     options = Options()
+
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    driver = webdriver.Chrome(options=options)
+
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
+
+    WebDriverWait(driver, 15).until(
+        EC.presence_of_element_located((By.TAG_NAME, "body"))
+    )
+
     return driver
 
 
@@ -66,24 +78,17 @@ def __verificar_disponibilidade(driver):
 
 
 def initialize_airbnb_scraper(**kwargs):
-    try:
-        driver = __setup_driver()
+    driver = __setup_driver()
 
-        config = kwargs.get("config", {})
+    try:
         check_in = kwargs.get("check_in")
         check_out = kwargs.get("check_out")
         guests = kwargs.get("guests", 1)
         adults = kwargs.get("adults", 1)
-        metadata = config.get("metadata", {})
-        thread_id = metadata.get("thread_id")
 
-        print("Checking availability for:")
-        print(f"  Check-in: {check_in}")
-        print(f"  Check-out: {check_out}")
-        print(f"  Guests: {guests}")
-        print(f"  Adults: {adults}")
-        print(f"  Thread ID: {thread_id}")
-        print(f"  Config: {config}")
+        # config = kwargs.get("config", {})
+        # metadata = config.get("metadata", {})
+        # thread_id = metadata.get("thread_id")
 
         # TODO: Obter o room_id dinamicamente, se possível
         # Através do thread_id ou de outra forma
@@ -93,13 +98,12 @@ def initialize_airbnb_scraper(**kwargs):
         # URL com os parâmetros fornecidos via linha de comando
         url = (
             f"https://www.airbnb.com.br/rooms/{room_id}?"
-            f"check_in={kwargs['check_in']}&check_out={kwargs['check_out']}"
-            f"&adults={kwargs['adults']}"
+            f"check_in={check_in}&check_out={check_out}"
+            f"&adults={adults}&guests={guests}"
         )
-        print(f"🔗 URL: {url}")
-
         driver.get(url)
-        time.sleep(5)  # Wait for the page to load
+
+        time.sleep(6)
 
         # Obtém as informações
         titulo = __extrair_titulo(driver)

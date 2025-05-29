@@ -12,3 +12,4 @@ langgraph-checkpoint-postgres
 pika  # RabbitMQ client for Python
 
 selenium
+webdriver-manager
