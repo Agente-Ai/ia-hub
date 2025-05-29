@@ -10,3 +10,5 @@ psycopg2-binary
 langgraph-checkpoint-postgres
 
 pika  # RabbitMQ client for Python
+
+selenium
