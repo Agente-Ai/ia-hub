@@ -1,7 +1,10 @@
 import os
 import json
 import pika
+from dotenv import load_dotenv
 from agent_runner import AgentRunner
+
+load_dotenv()
 
 RABBITMQ_OUTPUT_QUEUE = os.getenv("RABBITMQ_OUTPUT_QUEUE", "messages.to_send")
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
