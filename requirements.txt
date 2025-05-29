@@ -1,0 +1,10 @@
+ipython
+langgraph
+langsmith
+langchain[openai]
+langchain_community
+
+psycopg
+langgraph-checkpoint-postgres
+
+pika  # RabbitMQ client for Python
