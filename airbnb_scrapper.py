@@ -2,6 +2,7 @@ import os
 import time
 import logging
 
+import psycopg2
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -135,7 +136,36 @@ def __scroll_until_price(driver, timeout=20):
 
 def __get_room_id(config):
     logger.info("Obtendo ID do quarto a partir da configuração...")
-    return "769729843373520689"
+
+    owner_id = None
+    if config and isinstance(config, dict):
+        metadata = config.get("metadata", {})
+        owner_id = metadata.get("owner_id")
+
+    if not owner_id:
+        logger.warning("owner_id não encontrado na configuração. Usando valor padrão.")
+        raise ValueError("owner_id não encontrado na configuração.")
+
+    try:
+        conn = psycopg2.connect(os.getenv("POSTGRES_URL", ""))
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM rooms WHERE owner_id = %s LIMIT 1", (owner_id,))
+        result = cur.fetchone()
+        cur.close()
+        conn.close()
+        if result:
+            logger.info(f"Room id encontrado para owner_id {owner_id}: {result[0]}")
+            return result[0]
+        else:
+            logger.warning(
+                "Nenhum room id encontrado para owner_id %s. Usando padrão.", owner_id
+            )
+            raise ValueError(f"Nenhum room id encontrado para owner_id {owner_id}.")
+    except Exception as e:
+        logger.error(f"Erro ao buscar room id no banco: {e}")
+        raise ValueError(
+            f"Erro ao buscar room id no banco para owner_id {owner_id}: {e}"
+        )
 
 
 def initialize_airbnb_scraper(**kwargs):
