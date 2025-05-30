@@ -160,9 +160,12 @@ def __get_rooms_ids(config):
         cur.close()
         conn.close()
 
-        if result:
-            logger.info("Rooms ids encontrados para owner_id %s: %s", owner_id, result)
-            return result
+        # Extrai apenas os ids do resultado (que vem como lista de tuplas)
+        ids = [row[0] for row in result]
+
+        if ids:
+            logger.info("Rooms ids encontrados para owner_id %s: %s", owner_id, ids)
+            return ids
         else:
             logger.warning(
                 "Nenhum room id encontrado para owner_id %s. Usando padrão.", owner_id
