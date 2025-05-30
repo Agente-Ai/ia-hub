@@ -245,6 +245,37 @@ def __extrair_preco_total(driver):
     except Exception as e:
         logger.warning("Erro ao tentar encontrar preço por aria-label: %s", e)
 
+    # Estratégia 4: Tentar extrair preço via JavaScript (incluindo shadow DOM)
+    logger.info("Tentando extrair preço via JavaScript (shadow DOM)...")
+    try:
+        js_code = '''
+        function getPriceFromShadowRoots() {
+            let price = null;
+            // Busca todos os elementos que podem conter shadow roots
+            const allElems = document.querySelectorAll('*');
+            for (const elem of allElems) {
+                if (elem.shadowRoot) {
+                    // Busca por qualquer texto com R$ dentro do shadow root
+                    const matches = elem.shadowRoot.querySelectorAll('*');
+                    for (const match of matches) {
+                        if (match.innerText && match.innerText.includes('R$')) {
+                            price = match.innerText;
+                            if (price) return price;
+                        }
+                    }
+                }
+            }
+            return price;
+        }
+        return getPriceFromShadowRoots();
+        '''
+        preco_js = driver.execute_script(js_code)
+        if preco_js:
+            logger.info("✅ Preço encontrado via JavaScript/shadow DOM: %s", preco_js)
+            return preco_js
+    except Exception as e:
+        logger.warning("Erro ao tentar extrair preço via JavaScript/shadow DOM: %s", e)
+
     logger.warning(
         "[DEBUG] Nenhum preço encontrado após todas as estratégias. Textos de elementos com 'R$' analisados: %s",
         textos_debug,
