@@ -51,7 +51,7 @@ def __setup_driver():
         if ENV != "local":
             # Em ambientes de produção, o Chrome geralmente está em um caminho específico
             options.binary_location = "/usr/bin/google-chrome"
-            options.add_argument("--headless")
+            options.add_argument("--headless=new")
             logger.info(
                 "Executando em ambiente de produção. Usando Chrome em %s",
                 options.binary_location,
@@ -248,7 +248,7 @@ def __extrair_preco_total(driver):
     # Estratégia 4: Tentar extrair preço via JavaScript (incluindo shadow DOM)
     logger.info("Tentando extrair preço via JavaScript (shadow DOM)...")
     try:
-        js_code = '''
+        js_code = """
         function getPriceFromShadowRoots() {
             let price = null;
             // Busca todos os elementos que podem conter shadow roots
@@ -268,7 +268,7 @@ def __extrair_preco_total(driver):
             return price;
         }
         return getPriceFromShadowRoots();
-        '''
+        """
         preco_js = driver.execute_script(js_code)
         if preco_js:
             logger.info("✅ Preço encontrado via JavaScript/shadow DOM: %s", preco_js)
