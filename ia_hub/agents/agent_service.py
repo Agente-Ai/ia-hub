@@ -2,7 +2,7 @@ import os
 import json
 import pika
 from dotenv import load_dotenv
-from agent_runner import AgentRunner
+from .agent_runner import AgentRunner
 
 load_dotenv()
 
