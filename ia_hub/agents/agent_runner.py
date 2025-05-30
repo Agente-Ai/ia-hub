@@ -35,7 +35,9 @@ class AgentRunner:
 
             responses = agent_executor.invoke(
                 {
-                    "messages": [HumanMessage(content=content)],
+                    "messages": [
+                        HumanMessage(content=content),
+                    ],
                 },
                 self.config,
             )

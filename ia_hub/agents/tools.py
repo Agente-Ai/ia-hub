@@ -1,5 +1,5 @@
 import os
-from datetime import date, datetime
+from datetime import date
 
 from langchain_core.tools import tool
 from langchain_openai import OpenAIEmbeddings
@@ -53,11 +53,3 @@ def look_for_information_that_i_don_t_know(
     )
 
     return results
-
-
-@tool
-def get_local_datetime() -> str:
-    """
-    Retorna a data e hora local atual no formato ISO 8601.
-    """
-    return datetime.now().isoformat()

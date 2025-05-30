@@ -1,9 +1,9 @@
 import os
+from datetime import datetime
 from langchain.chat_models import init_chat_model
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.postgres import PostgresSaver
 from .tools import (
-    get_local_datetime,
     retrieve_availability_and_prices,
     look_for_information_that_i_don_t_know,
 )
@@ -12,7 +12,6 @@ from .tools import (
 def get_tools():
     """Retorna a lista de ferramentas disponíveis para o agente."""
     return [
-        get_local_datetime,
         retrieve_availability_and_prices,
         look_for_information_that_i_don_t_know,
     ]
@@ -36,5 +35,8 @@ def create_agent_executor(checkpointer):
     return create_react_agent(
         model=model,
         tools=tools,
+        prompt=f"""
+            Data atual: {datetime.now().isoformat()}
+        """,
         checkpointer=checkpointer,
     )
