@@ -13,9 +13,9 @@ from ..airbnb.airbnb_scrapper import initialize_airbnb_scraper
 def retrieve_availability_and_prices(
     check_in: date,
     check_out: date,
+    guests: int,
+    adults: int,
     config: RunnableConfig,
-    guests: int = 1,
-    adults: int = 1,
 ) -> str:
     """Retrieve availability and prices for a given date range and number of guests."""
     return initialize_airbnb_scraper(

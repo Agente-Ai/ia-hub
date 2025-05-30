@@ -1,5 +1,4 @@
 import os
-from langchain_core.messages import SystemMessage
 from langchain.chat_models import init_chat_model
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.postgres import PostgresSaver
@@ -37,10 +36,5 @@ def create_agent_executor(checkpointer):
     return create_react_agent(
         model=model,
         tools=tools,
-        prompt=SystemMessage(
-            content="""
-                Você é um agente de IA especializado em atendimento ao cliente para uma pousada. Seu principal objetivo é responder perguntas sobre disponibilidade, preços de acomodações e serviços oferecidos. Caso não saiba alguma informação, utilize as ferramentas disponíveis para buscar detalhes atualizados sobre a empresa em que você atua. Sempre priorize respostas precisas, claras e úteis, com foco na experiência do hóspede.
-            """
-        ),
         checkpointer=checkpointer,
     )
