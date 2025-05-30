@@ -42,11 +42,11 @@ def __setup_driver():
 
         return driver
     except Exception as e:
-        logger.error(f"❌ Ocorreu um erro ao configurar o driver: {e}")
+        logger.error("❌ Ocorreu um erro ao configurar o driver: %s", e)
         if hasattr(e, "msg"):
-            logger.error(f"Mensagem do erro: {e.msg}")
+            logger.error("Mensagem do erro: %s", e.msg)
         if hasattr(e, "stacktrace"):
-            logger.error(f"Stacktrace: {e.stacktrace}")
+            logger.error("Stacktrace: %s", e.stacktrace)
         raise
 
 
@@ -56,12 +56,12 @@ def __extrair_titulo(driver):
         while True:
             titulo = driver.find_element(By.TAG_NAME, "h1").text.strip()
             if titulo != "Ajude-nos a melhorar sua experiência":
-                logger.info(f"Título encontrado: {titulo}")
+                logger.info("Título encontrado: %s", titulo)
                 return titulo
             logger.info("Página ainda não carregou o título correto. Aguardando...")
             time.sleep(1)
     except Exception as e:
-        logger.warning(f"Título não encontrado: {e}")
+        logger.warning("Título não encontrado: %s", e)
         return "⚠️ Título não encontrado"
 
 
@@ -72,25 +72,31 @@ def __extrair_preco_total(driver):
             EC.presence_of_element_located((By.XPATH, "//*[contains(text(),'R$')]"))
         )
     except Exception as e:
-        logger.warning(f"Elemento com 'R$' não encontrado imediatamente: {e}")
+        logger.warning("Elemento com 'R$' não encontrado imediatamente: %s", e)
+        raise
+
     elementos = driver.find_elements(By.XPATH, "//*[contains(text(),'R$')]")
     preco_total = None
     textos_debug = []
+
     for elem in elementos:
         texto = elem.text.strip()
         textos_debug.append(texto)
         if "noite" in texto and "R$" in texto:
             preco_total = texto
-            logger.info(f"Preço total encontrado (com noite): {preco_total}")
+            logger.info("Preço total encontrado (com noite): %s", preco_total)
             break
+
     if not preco_total:
         for texto in textos_debug:
             if "R$" in texto and "noite" not in texto:
                 preco_total = texto
-                logger.info(f"Preço total encontrado (sem noite): {preco_total}")
+                logger.info("Preço total encontrado (sem noite): %s", preco_total)
                 break
+
     if not preco_total:
-        logger.warning(f"[DEBUG] Nenhum preço encontrado. Textos: {textos_debug}")
+        logger.warning("[DEBUG] Nenhum preço encontrado. Textos: %s", textos_debug)
+
     return preco_total
 
 
@@ -105,7 +111,7 @@ def __verificar_disponibilidade(driver):
     mensagem_indisponivel = None
     if indisponivel:
         mensagem_indisponivel = indisponivel[0].text.strip()
-        logger.info(f"Imóvel indisponível: {mensagem_indisponivel}")
+        logger.info("Imóvel indisponível: %s", mensagem_indisponivel)
     else:
         logger.info("Imóvel disponível nas datas selecionadas.")
     return len(indisponivel) == 0, mensagem_indisponivel
@@ -134,7 +140,7 @@ def __scroll_until_price(driver, timeout=20):
     return False
 
 
-def __get_room_id(config):
+def __get_rooms_ids(config):
     logger.info("Obtendo ID do quarto a partir da configuração...")
 
     owner_id = None
@@ -150,22 +156,70 @@ def __get_room_id(config):
         conn = psycopg2.connect(os.getenv("POSTGRES_URL", ""))
         cur = conn.cursor()
         cur.execute("SELECT id FROM rooms WHERE owner_id = %s LIMIT 1", (owner_id,))
-        result = cur.fetchone()
+        result = cur.fetchall()
         cur.close()
         conn.close()
+
         if result:
-            logger.info(f"Room id encontrado para owner_id {owner_id}: {result[0]}")
-            return result[0]
+            logger.info("Rooms ids encontrados para owner_id %s: %s", owner_id, result)
+            return result
         else:
             logger.warning(
                 "Nenhum room id encontrado para owner_id %s. Usando padrão.", owner_id
             )
             raise ValueError(f"Nenhum room id encontrado para owner_id {owner_id}.")
     except Exception as e:
-        logger.error(f"Erro ao buscar room id no banco: {e}")
+        logger.error("Erro ao buscar room id no banco: %s", e)
         raise ValueError(
             f"Erro ao buscar room id no banco para owner_id {owner_id}: {e}"
+        ) from e
+
+
+def __process_each_room_id(
+    driver,
+    room_id,
+    check_in,
+    check_out,
+    guests,
+    adults,
+):
+    try:
+        url = (
+            f"https://www.airbnb.com.br/rooms/{room_id}?"
+            f"check_in={check_in}&check_out={check_out}"
+            f"&adults={adults}&guests={guests}"
         )
+
+        logger.info("Acessando URL: %s", url)
+        driver.get(url)
+
+        __scroll_until_price(driver)
+
+        titulo = __extrair_titulo(driver)
+        preco_total = __extrair_preco_total(driver)
+        disponivel, mensagem_indisponivel = __verificar_disponibilidade(driver)
+        text_return = [f"🏡 Título do anúncio: {titulo}"]
+
+        if preco_total:
+            text_return.append(f"💰 Valor total: {preco_total}")
+        else:
+            text_return.append("⚠️ Preço não encontrado.")
+        if disponivel:
+            text_return.append("✅ Imóvel disponível nas datas selecionadas.")
+        else:
+            text_return.append("❌ Imóvel indisponível nas datas selecionadas.")
+            if mensagem_indisponivel:
+                text_return.append(f"📝 Motivo: {mensagem_indisponivel}")
+
+        logger.info("Scraping finalizado.")
+
+        return "\n".join(text_return)
+    except Exception as e:
+        logger.error("❌ Ocorreu um erro ao extrair as informações: %s", e)
+        raise
+    finally:
+        driver.quit()
+        logger.info("Driver fechado.")
 
 
 def initialize_airbnb_scraper(**kwargs):
@@ -178,34 +232,16 @@ def initialize_airbnb_scraper(**kwargs):
         adults = kwargs.get("adults", 1)
         config = kwargs.get("config", {})
 
-        room_id = __get_room_id(config)
+        rooms_ids = __get_rooms_ids(config)
 
-        url = (
-            f"https://www.airbnb.com.br/rooms/{room_id}?"
-            f"check_in={check_in}&check_out={check_out}"
-            f"&adults={adults}&guests={guests}"
-        )
-        logger.info(f"Acessando URL: {url}")
-        driver.get(url)
-        __scroll_until_price(driver)
-        titulo = __extrair_titulo(driver)
-        preco_total = __extrair_preco_total(driver)
-        disponivel, mensagem_indisponivel = __verificar_disponibilidade(driver)
-        text_return = [f"🏡 Título do anúncio: {titulo}"]
-        if preco_total:
-            text_return.append(f"💰 Valor total: {preco_total}")
-        else:
-            text_return.append("⚠️ Preço não encontrado.")
-        if disponivel:
-            text_return.append("✅ Imóvel disponível nas datas selecionadas.")
-        else:
-            text_return.append("❌ Imóvel indisponível nas datas selecionadas.")
-            if mensagem_indisponivel:
-                text_return.append(f"📝 Motivo: {mensagem_indisponivel}")
-        logger.info("Scraping finalizado.")
-        return "\n".join(text_return)
+        for room_id in rooms_ids:
+            logger.info("Processando room_id: %s", room_id)
+            result = __process_each_room_id(
+                driver, room_id, check_in, check_out, guests, adults
+            )
+            logger.info("Resultado do scraping: %s", result)
+            return result
+
     except Exception as e:
-        logger.error(f"❌ Ocorreu um erro ao extrair as informações: {e}")
-    finally:
-        driver.quit()
-        logger.info("Driver fechado.")
+        logger.error("❌ Ocorreu um erro ao iniciar o scraping: %s", e)
+        raise
