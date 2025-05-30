@@ -38,8 +38,9 @@ def main():
         try:
             data = json.loads(body)
 
-            thread = threading.Thread(target=process_and_publish, args=(data,))
-            thread.start()
+            process_and_publish(data)
+
+            ch.basic_ack(delivery_tag=method.delivery_tag)
         except json.JSONDecodeError:
             logging.exception("Erro ao decodificar JSON da mensagem:")
         except pika.exceptions.AMQPError:
@@ -48,7 +49,7 @@ def main():
             logging.exception("Erro inesperado ao processar mensagem:")
             raise
         finally:
-            ch.basic_ack(delivery_tag=method.delivery_tag)
+            logging.info("Mensagem processada e confirmada.")
 
         logging.info("Processamento delegado para thread.")
 
