@@ -1,4 +1,4 @@
-from agent_runner import AgentRunner
+from ia_hub.agents.agent_runner import AgentRunner
 
 
 def main():

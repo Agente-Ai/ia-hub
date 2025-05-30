@@ -8,7 +8,7 @@ import pika
 import logging
 import threading
 from dotenv import load_dotenv
-from agent_service import process_and_publish
+from ia_hub.agents.agent_service import process_and_publish
 
 load_dotenv()
 
