@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from langchain_core.messages import SystemMessage
 from langchain.chat_models import init_chat_model
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.postgres import PostgresSaver
@@ -35,8 +36,10 @@ def create_agent_executor(checkpointer):
     return create_react_agent(
         model=model,
         tools=tools,
-        prompt=f"""
-            Data atual: {datetime.now().isoformat()}
-        """,
+        prompt=SystemMessage(
+            content=f"""
+                Data atual: {datetime.now().isoformat()}
+            """,
+        ),
         checkpointer=checkpointer,
     )
