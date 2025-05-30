@@ -1,3 +1,4 @@
+import re
 import os
 import time
 import logging
@@ -37,13 +38,9 @@ def __setup_driver():
         options = Options()
         # Adiciona argumentos comuns para ambos os ambientes
         options.add_argument(
-            "--window-size=1920,1080"
-        )  # Define o tamanho da janela para evitar problemas de layout
-        options.add_argument(
             "--disable-blink-features=AutomationControlled"
         )  # Evita detecção de automação
         options.add_argument("--disable-extensions")
-        options.add_argument("--start-maximized")
         options.add_argument("--no-sandbox")  # Necessário em alguns ambientes Linux
         options.add_argument(
             "--disable-dev-shm-usage"
@@ -54,7 +51,7 @@ def __setup_driver():
         if ENV != "local":
             # Em ambientes de produção, o Chrome geralmente está em um caminho específico
             options.binary_location = "/usr/bin/google-chrome"
-            # options.add_argument("--headless") # Descomente para rodar em modo headless em produção
+            options.add_argument("--headless")
             logger.info(
                 "Executando em ambiente de produção. Usando Chrome em %s",
                 options.binary_location,
@@ -77,29 +74,6 @@ def __setup_driver():
     except Exception as e:
         logger.error("❌ Ocorreu um erro inesperado ao configurar o driver: %s", e)
         raise
-
-
-def __take_screenshot(driver, filename):
-    """
-    Tira um screenshot da página atual.
-    """
-    try:
-        driver.save_screenshot(filename)
-        logger.info("Screenshot salvo em: %s", filename)
-    except Exception as e:
-        logger.warning("Não foi possível tirar screenshot %s: %s", filename, e)
-
-
-def __dump_page_source(driver, filename):
-    """
-    Salva o código fonte da página atual em um arquivo.
-    """
-    try:
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(driver.page_source)
-        logger.info("Código fonte da página salvo em: %s", filename)
-    except Exception as e:
-        logger.warning("Não foi possível salvar o código fonte em %s: %s", filename, e)
 
 
 def __extrair_titulo(driver):
@@ -163,11 +137,6 @@ def __extrair_preco_total(driver):
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(3)  # Pequeno delay para renderização após o scroll
 
-    # Tira screenshot e salva o HTML após o scroll para debug
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    __take_screenshot(driver, f"debug_airbnb_page_after_scroll_{timestamp}.png")
-    __dump_page_source(driver, f"debug_airbnb_preco_after_scroll_{timestamp}.html")
-
     # Estratégia 1: Tentar encontrar o preço total por data-testid (comum no Airbnb)
     logger.info("Tentando encontrar preço por data-testid='book-it-total-price'...")
     try:
@@ -216,7 +185,6 @@ def __extrair_preco_total(driver):
                 # Verifica se o texto contém um valor numérico válido após "R$"
                 if "R$" in texto:
                     # Regex para extrair o valor numérico (incluindo vírgula para decimal)
-                    import re
 
                     match = re.search(r"R\$\s*([\d\.,]+)", texto)
                     if match:
@@ -438,8 +406,6 @@ def __process_each_room_id(
 
         # Tira screenshot inicial e salva o HTML para debug
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        __take_screenshot(driver, f"debug_airbnb_page_initial_{timestamp}.png")
-        __dump_page_source(driver, f"debug_airbnb_page_initial_{timestamp}.html")
 
         # Espera pelo carregamento inicial da página (pode ser o título ou um elemento genérico)
         try:
@@ -487,8 +453,6 @@ def __process_each_room_id(
         )
         # Tenta tirar um screenshot final em caso de erro
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        __take_screenshot(driver, f"debug_airbnb_error_{timestamp}.png")
-        __dump_page_source(driver, f"debug_airbnb_error_{timestamp}.html")
         raise
     finally:
         # O driver será fechado na função initialize_airbnb_scraper
