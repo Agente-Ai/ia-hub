@@ -51,8 +51,6 @@ def main():
         finally:
             logging.info("Mensagem processada e confirmada.")
 
-        logging.info("Processamento delegado para thread.")
-
     channel.basic_qos(prefetch_count=1)
     channel.basic_consume(
         queue=RABBITMQ_INPUT_QUEUE,
