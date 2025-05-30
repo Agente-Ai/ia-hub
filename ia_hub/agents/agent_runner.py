@@ -1,5 +1,5 @@
 from langchain_core.messages import HumanMessage
-from agent_config import get_checkpointer, create_agent_executor
+from .agent_config import get_checkpointer, create_agent_executor
 
 
 class AgentRunner:

@@ -6,7 +6,7 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_core.runnables import RunnableConfig
 from langchain_postgres.vectorstores import PGVector
 
-from airbnb_scrapper import initialize_airbnb_scraper
+from ..airbnb.airbnb_scrapper import initialize_airbnb_scraper
 
 
 @tool
