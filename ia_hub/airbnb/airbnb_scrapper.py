@@ -27,19 +27,28 @@ def __setup_driver():
             driver = webdriver.Chrome(service=service, options=options)
         else:
             options.binary_location = "/usr/bin/google-chrome"
-            options.add_argument("--headless")
+            # options.add_argument("--headless")  # Removido para debug visual
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
             options.add_argument("--disable-gpu")
             options.add_argument("--remote-debugging-port=9222")
             driver = webdriver.Chrome(options=options)
 
-        logger.info("Chrome iniciado. Aguardando carregamento do body...")
-
-        WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
-
+        logger.info("Chrome iniciado. Aguardando carregamento do preço...")
+        # Espera até o preço aparecer na página (ou timeout de 30s)
+        try:
+            WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located(
+                    (
+                        By.XPATH,
+                        "//*[contains(text(),'R$') or contains(text(),'noite') or contains(text(),'diária') or contains(text(),'Total') or contains(text(),'total') or contains(text(),'preço') or contains(text(),'Preço') or contains(text(),'valor') or contains(text(),'Valor')]",
+                    )
+                )
+            )
+        except Exception as e:
+            logger.warning("Timeout ou erro ao esperar pelo preço: %s", e)
+            # Não fecha o driver aqui, pois pode ser só lentidão
+        time.sleep(10)  # Delay extra para garantir renderização do JS
         return driver
     except Exception as e:
         logger.error("❌ Ocorreu um erro ao configurar o driver: %s", e)
@@ -53,13 +62,33 @@ def __setup_driver():
 def __extrair_titulo(driver):
     logger.info("Extraindo título do anúncio...")
     try:
-        while True:
+        # Espera até 30s pelo h1
+        try:
+            WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located((By.TAG_NAME, "h1"))
+            )
+        except Exception as e:
+            logger.warning("Timeout esperando pelo h1: %s", e)
+        time.sleep(2)  # Pequeno delay extra
+        try:
             titulo = driver.find_element(By.TAG_NAME, "h1").text.strip()
-            if titulo != "Ajude-nos a melhorar sua experiência":
+            if titulo:
                 logger.info("Título encontrado: %s", titulo)
                 return titulo
-            logger.info("Página ainda não carregou o título correto. Aguardando...")
-            time.sleep(1)
+        except Exception as e:
+            logger.warning("h1 não encontrado: %s", e)
+        # Tenta buscar por outros elementos comuns de título
+        try:
+            titulo_alt = driver.find_element(
+                By.CSS_SELECTOR, '[data-testid="listing-page-title"]'
+            ).text.strip()
+            if titulo_alt:
+                logger.info("Título alternativo encontrado: %s", titulo_alt)
+                return titulo_alt
+        except Exception as e:
+            logger.warning("Título alternativo não encontrado: %s", e)
+        logger.warning("Título não encontrado!")
+        return "⚠️ Título não encontrado"
     except Exception as e:
         logger.warning("Título não encontrado: %s", e)
         return "⚠️ Título não encontrado"
@@ -68,36 +97,57 @@ def __extrair_titulo(driver):
 def __extrair_preco_total(driver):
     logger.info("Extraindo preço total...")
     try:
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, "//*[contains(text(),'R$')]"))
-        )
-    except Exception as e:
-        logger.warning("Elemento com 'R$' não encontrado imediatamente: %s", e)
-        raise
-
-    elementos = driver.find_elements(By.XPATH, "//*[contains(text(),'R$')]")
-    preco_total = None
-    textos_debug = []
-
-    for elem in elementos:
-        texto = elem.text.strip()
-        textos_debug.append(texto)
-        if "noite" in texto and "R$" in texto:
-            preco_total = texto
-            logger.info("Preço total encontrado (com noite): %s", preco_total)
-            break
-
-    if not preco_total:
-        for texto in textos_debug:
-            if "R$" in texto and "noite" not in texto:
+        # Rola a página até o final para garantir que o preço seja renderizado
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)
+        # Dump do HTML após scroll para debug
+        with open("debug_airbnb_preco_after_scroll.html", "w", encoding="utf-8") as f:
+            f.write(driver.page_source)
+        # Busca por elementos com R$
+        elementos = driver.find_elements(By.XPATH, "//*[contains(text(),'R$')]")
+        preco_total = None
+        textos_debug = []
+        for elem in elementos:
+            texto = elem.text.strip()
+            textos_debug.append(texto)
+            if (
+                "noite" in texto
+                or "diária" in texto
+                or "Total" in texto
+                or "total" in texto
+            ) and "R$" in texto:
                 preco_total = texto
-                logger.info("Preço total encontrado (sem noite): %s", preco_total)
+                logger.info("Preço total encontrado: %s", preco_total)
                 break
-
-    if not preco_total:
-        logger.warning("[DEBUG] Nenhum preço encontrado. Textos: %s", textos_debug)
-
-    return preco_total
+        # Busca alternativa: data-testid ou aria-label
+        if not preco_total:
+            try:
+                preco_alt = driver.find_element(
+                    By.CSS_SELECTOR, '[data-testid*="price"]'
+                )
+                preco_total = preco_alt.text.strip()
+                logger.info(
+                    "Preço alternativo encontrado (data-testid): %s", preco_total
+                )
+            except Exception:
+                pass
+        if not preco_total:
+            try:
+                preco_aria = driver.find_element(
+                    By.CSS_SELECTOR, '[aria-label*="preço"], [aria-label*="valor"]'
+                )
+                preco_total = preco_aria.text.strip()
+                logger.info(
+                    "Preço alternativo encontrado (aria-label): %s", preco_total
+                )
+            except Exception:
+                pass
+        if not preco_total:
+            logger.warning("[DEBUG] Nenhum preço encontrado. Textos: %s", textos_debug)
+        return preco_total
+    except Exception as e:
+        logger.warning("Erro ao extrair preço: %s", e)
+        return None
 
 
 def __verificar_disponibilidade(driver):
@@ -124,7 +174,6 @@ def __scroll_until_price(driver, timeout=20):
     while time.time() - start_time < timeout:
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         logger.debug("Scroll realizado até o final da página.")
-        time.sleep(2)
         elementos = driver.find_elements(
             By.XPATH, "//*[contains(text(),'por') and contains(text(),'noite')]"
         )
