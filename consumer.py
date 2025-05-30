@@ -22,7 +22,7 @@ logging.basicConfig(
 
 
 def main():
-    logging.info(f"Conectando ao RabbitMQ em {RABBITMQ_URL}...")
+    logging.info("Conectando ao RabbitMQ em %s...", RABBITMQ_URL)
     connection = pika.BlockingConnection(pika.URLParameters(RABBITMQ_URL))
 
     channel = connection.channel()
@@ -30,25 +30,33 @@ def main():
     channel.queue_declare(queue=RABBITMQ_INPUT_QUEUE, durable=True)
     channel.queue_declare(queue=RABBITMQ_OUTPUT_QUEUE, durable=True)
 
-    logging.info(f"Aguardando mensagens na fila '{RABBITMQ_INPUT_QUEUE}'...")
+    logging.info("Aguardando mensagens na fila '%s'...", RABBITMQ_INPUT_QUEUE)
 
     def callback(ch, method, properties, body):
-        logging.info(f"Mensagem recebida: {body}")
+        logging.info("Mensagem recebida: %s, properties: %s", body, properties)
 
         try:
             data = json.loads(body)
 
             thread = threading.Thread(target=process_and_publish, args=(data,))
             thread.start()
-        except Exception as e:
-            logging.exception("Erro ao processar mensagem:")
+        except json.JSONDecodeError:
+            logging.exception("Erro ao decodificar JSON da mensagem:")
+        except pika.exceptions.AMQPError:
+            logging.exception("Erro no RabbitMQ ao processar mensagem:")
+        except Exception:
+            logging.exception("Erro inesperado ao processar mensagem:")
+            raise
         finally:
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
         logging.info("Processamento delegado para thread.")
 
     channel.basic_qos(prefetch_count=1)
-    channel.basic_consume(queue=RABBITMQ_INPUT_QUEUE, on_message_callback=callback)
+    channel.basic_consume(
+        queue=RABBITMQ_INPUT_QUEUE,
+        on_message_callback=callback,
+    )
 
     try:
         channel.start_consuming()
