@@ -39,7 +39,7 @@ def __setup_driver():
 
         temp_user_data_dir = tempfile.mkdtemp()
 
-        print(
+        logger.info(
             f"Usando diretório temporário para dados do usuário: {temp_user_data_dir}"
         )
 
