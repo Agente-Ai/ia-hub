@@ -48,7 +48,7 @@ def __setup_driver():
         if ENV != "local":
             options.add_argument("--headless=new")
 
-        service = Service(ChromeDriverManager(driver_version="137.0.7151.41").install())
+        service = Service(ChromeDriverManager(driver_version="137.0.7151.55").install())
         driver = webdriver.Chrome(service=service, options=options)
 
         logger.info(
