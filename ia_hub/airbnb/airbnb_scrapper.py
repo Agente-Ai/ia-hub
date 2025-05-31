@@ -40,7 +40,7 @@ def __setup_driver():
 
         options.binary_location = os.getenv(
             "CHROME_BINARY_LOCATION",
-            "/usr/bin/google-chrome-stable",  # Local padrão no Docker
+            "/usr/bin/google-chrome-stable",
         )
 
         options.add_argument("--no-sandbox")
