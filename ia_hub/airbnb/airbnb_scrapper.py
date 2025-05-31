@@ -37,31 +37,22 @@ def __setup_driver():
         logger.info("Configurando o driver do Chrome...")
         options = Options()
         # Adiciona argumentos comuns para ambos os ambientes
-        options.add_argument(
-            "--disable-blink-features=AutomationControlled"
-        )  # Evita detecção de automação
+        options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_argument("--disable-extensions")
         options.add_argument("--no-sandbox")  # Necessário em alguns ambientes Linux
-        options.add_argument(
-            "--disable-dev-shm-usage"
-        )  # Necessário em alguns ambientes Linux
+        options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")  # Necessário em alguns ambientes Linux
         options.add_argument("--remote-debugging-port=9222")  # Porta para debug remoto
 
         if ENV != "local":
-            # Em ambientes de produção, o Chrome geralmente está em um caminho específico
-            options.binary_location = "/usr/bin/google-chrome"
             options.add_argument("--headless=new")
             logger.info(
                 "Executando em ambiente de produção. Usando Chrome em %s",
                 options.binary_location,
             )
-            driver = webdriver.Chrome(options=options)
-        else:
-            # Em ambiente local, usa o ChromeDriverManager para baixar e gerenciar o driver
-            logger.info("Executando em ambiente local. Baixando driver do Chrome...")
-            service = Service(ChromeDriverManager().install())
-            driver = webdriver.Chrome(service=service, options=options)
+
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
 
         logger.info("Driver do Chrome configurado com sucesso.")
         return driver
