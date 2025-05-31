@@ -2,7 +2,6 @@ import re
 import os
 import time
 import logging
-import subprocess
 from datetime import datetime
 
 import psycopg2
@@ -29,16 +28,6 @@ logger = logging.getLogger(__name__)
 ENV = os.getenv("ENV", "local")
 
 
-def _get_chrome_version():
-    try:
-        result = subprocess.run(
-            ["google-chrome", "--version"], capture_output=True, text=True
-        )
-        return result.stdout.strip()
-    except Exception:
-        return "Chrome não encontrado"
-
-
 def __setup_driver():
     """
     Configura e inicializa o driver do Chrome para Selenium.
@@ -46,28 +35,26 @@ def __setup_driver():
     """
     try:
         logger.info("Configurando o driver do Chrome...")
-        logger.info("Versão do Chrome instalada: %s", _get_chrome_version())
 
         options = Options()
 
-        options.add_argument("--disable-blink-features=AutomationControlled")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-gpu")
         options.add_argument("--disable-extensions")
-        options.add_argument("--no-sandbox")  # Necessário em alguns ambientes Linux
         options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--disable-gpu")  # Necessário em alguns ambientes Linux
-        options.add_argument("--remote-debugging-port=9222")  # Porta para debug remoto
+        options.add_argument("--remote-debugging-port=9222")
+        options.add_argument("--disable-blink-features=AutomationControlled")
 
         if ENV != "local":
             options.add_argument("--headless=new")
-            logger.info(
-                "Executando em ambiente de produção. Usando Chrome em %s",
-                options.binary_location,
-            )
 
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
 
-        logger.info("Driver do Chrome configurado com sucesso.")
+        logger.info(
+            "Driver do Chrome configurado com sucesso. Usando Chrome em %s",
+            options.binary_location,
+        )
         return driver
     except WebDriverException as e:
         logger.error("❌ Erro ao configurar o driver do Chrome: %s", e)
