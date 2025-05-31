@@ -51,7 +51,7 @@ def __setup_driver():
                 options.binary_location,
             )
 
-        service = Service(ChromeDriverManager().install())
+        service = Service(ChromeDriverManager(version="137.0.0").install())
         driver = webdriver.Chrome(service=service, options=options)
 
         logger.info("Driver do Chrome configurado com sucesso.")
