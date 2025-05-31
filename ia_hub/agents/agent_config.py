@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from langchain_core.messages import SystemMessage
 from langchain.chat_models import init_chat_model
 from langgraph.prebuilt import create_react_agent
@@ -38,7 +39,7 @@ def create_agent_executor(checkpointer):
         tools=tools,
         prompt=SystemMessage(
             content=f"""
-                Data atual: {datetime.now().isoformat()}
+                Data atual: {datetime.now(ZoneInfo('America/Sao_Paulo')).isoformat()}
             """,
         ),
         checkpointer=checkpointer,
