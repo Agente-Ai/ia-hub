@@ -40,6 +40,7 @@ class AgentRunner:
                     ],
                 },
                 self.config,
+                debug=True,
             )
 
             return responses

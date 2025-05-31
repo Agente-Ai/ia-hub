@@ -9,6 +9,21 @@ from .tools import (
     retrieve_availability_and_prices,
     look_for_information_that_i_don_t_know,
 )
+from langmem.short_term import SummarizationNode
+from langchain_core.messages.utils import count_tokens_approximately
+
+
+def get_model():
+    """Configura e retorna o modelo de chat."""
+    return init_chat_model(model="gpt-4")
+
+
+summarization_node = SummarizationNode(
+    max_tokens=384,
+    model=get_model(),
+    max_summary_tokens=128,
+    token_counter=count_tokens_approximately,
+)
 
 
 def get_tools():
@@ -17,11 +32,6 @@ def get_tools():
         retrieve_availability_and_prices,
         look_for_information_that_i_don_t_know,
     ]
-
-
-def get_model():
-    """Configura e retorna o modelo de chat."""
-    return init_chat_model(model="gpt-4")
 
 
 def get_checkpointer():
@@ -42,5 +52,7 @@ def create_agent_executor(checkpointer):
                 Data atual: {datetime.now(ZoneInfo('America/Sao_Paulo')).isoformat()}
             """,
         ),
+        pre_model_hook=summarization_node,
         checkpointer=checkpointer,
+        debug=True,
     )

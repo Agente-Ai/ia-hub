@@ -1,15 +1,14 @@
+langmem
 ipython
 langgraph
 langsmith
 langchain[openai]
 langchain_postgres
 langchain_community
-
-psycopg
-psycopg2-binary
 langgraph-checkpoint-postgres
 
-pika  # RabbitMQ client for Python
-
+pika
+psycopg
 selenium
+psycopg2-binary
 webdriver-manager
