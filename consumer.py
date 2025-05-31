@@ -5,8 +5,8 @@ Camada de consumidor RabbitMQ pronta para produção.
 import os
 import json
 import pika
+import time
 import logging
-import threading
 from dotenv import load_dotenv
 from ia_hub.agents.agent_service import process_and_publish
 
@@ -21,10 +21,21 @@ logging.basicConfig(
 )
 
 
+# --- Função de conexão robusta com reconexão ---
+def connect():
+    while True:
+        try:
+            return pika.BlockingConnection(pika.URLParameters(RABBITMQ_URL))
+        except pika.exceptions.AMQPConnectionError:
+            logging.warning(
+                "Falha ao conectar ao RabbitMQ. Tentando novamente em 5s..."
+            )
+            time.sleep(5)
+
+
 def main():
     logging.info("Conectando ao RabbitMQ em %s...", RABBITMQ_URL)
-    connection = pika.BlockingConnection(pika.URLParameters(RABBITMQ_URL))
-
+    connection = connect()
     channel = connection.channel()
 
     channel.queue_declare(queue=RABBITMQ_INPUT_QUEUE, durable=True)
@@ -33,23 +44,32 @@ def main():
     logging.info("Aguardando mensagens na fila '%s'...", RABBITMQ_INPUT_QUEUE)
 
     def callback(ch, method, properties, body):
-        logging.info("Mensagem recebida: %s, properties: %s", body, properties)
+        message_id = (
+            properties.headers.get("message_id")
+            if properties and properties.headers
+            else None
+        )
+        logging.info(
+            "Mensagem recebida: %s, properties: %s, message_id: %s",
+            body,
+            properties,
+            message_id,
+        )
 
         try:
             data = json.loads(body)
-
             process_and_publish(data)
-
-            ch.basic_ack(delivery_tag=method.delivery_tag)
         except json.JSONDecodeError:
             logging.exception("Erro ao decodificar JSON da mensagem:")
+            # Aqui poderia enviar para uma fila de dead-letter
         except pika.exceptions.AMQPError:
             logging.exception("Erro no RabbitMQ ao processar mensagem:")
+            # Aqui poderia enviar para uma fila de retry
         except Exception:
             logging.exception("Erro inesperado ao processar mensagem:")
             raise
         finally:
-            logging.info("Mensagem processada e confirmada.")
+            ch.basic_ack(delivery_tag=method.delivery_tag)
 
     channel.basic_consume(
         queue=RABBITMQ_INPUT_QUEUE,
