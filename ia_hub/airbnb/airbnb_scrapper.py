@@ -11,7 +11,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import (
     TimeoutException,
@@ -64,7 +63,7 @@ def __setup_driver():
                 options.binary_location,
             )
 
-        service = Service(ChromeDriverManager(driver_version="137.0.0").install())
+        service = Service("/usr/bin/google-chrome")
         driver = webdriver.Chrome(service=service, options=options)
 
         logger.info("Driver do Chrome configurado com sucesso.")
