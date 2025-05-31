@@ -39,6 +39,10 @@ def __setup_driver():
 
         temp_user_data_dir = tempfile.mkdtemp()
 
+        print(
+            f"Usando diretório temporário para dados do usuário: {temp_user_data_dir}"
+        )
+
         options = Options()
 
         options.binary_location = os.getenv(
@@ -48,14 +52,12 @@ def __setup_driver():
 
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-gpu")
+        options.add_argument("--headless=new")
         options.add_argument("--disable-extensions")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--remote-debugging-port=9222")
         options.add_argument(f"--user-data-dir={temp_user_data_dir}")
         options.add_argument("--disable-blink-features=AutomationControlled")
-
-        if ENV != "local":
-            options.add_argument("--headless=new")
 
         service = Service(ChromeDriverManager(driver_version="137.0.7151.55").install())
         driver = webdriver.Chrome(service=service, options=options)
