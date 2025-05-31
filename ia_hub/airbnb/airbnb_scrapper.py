@@ -2,6 +2,7 @@ import re
 import os
 import time
 import logging
+import subprocess
 from datetime import datetime
 
 import psycopg2
@@ -28,6 +29,16 @@ logger = logging.getLogger(__name__)
 ENV = os.getenv("ENV", "local")
 
 
+def _get_chrome_version():
+    try:
+        result = subprocess.run(
+            ["google-chrome", "--version"], capture_output=True, text=True
+        )
+        return result.stdout.strip()
+    except Exception:
+        return "Chrome não encontrado"
+
+
 def __setup_driver():
     """
     Configura e inicializa o driver do Chrome para Selenium.
@@ -35,8 +46,10 @@ def __setup_driver():
     """
     try:
         logger.info("Configurando o driver do Chrome...")
+        logger.info("Versão do Chrome instalada: %s", _get_chrome_version())
+
         options = Options()
-        # Adiciona argumentos comuns para ambos os ambientes
+
         options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_argument("--disable-extensions")
         options.add_argument("--no-sandbox")  # Necessário em alguns ambientes Linux
