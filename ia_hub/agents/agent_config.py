@@ -22,6 +22,7 @@ summarization_node = SummarizationNode(
     max_tokens=384,
     model=get_model(),
     max_summary_tokens=128,
+    output_messages_key="messages",
     token_counter=count_tokens_approximately,
 )
 
