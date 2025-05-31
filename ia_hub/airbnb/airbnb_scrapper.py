@@ -2,6 +2,7 @@ import re
 import os
 import time
 import logging
+import tempfile
 from datetime import datetime
 
 import psycopg2
@@ -36,6 +37,8 @@ def __setup_driver():
     try:
         logger.info("Configurando o driver do Chrome...")
 
+        temp_user_data_dir = tempfile.mkdtemp()
+
         options = Options()
 
         options.binary_location = os.getenv(
@@ -48,6 +51,7 @@ def __setup_driver():
         options.add_argument("--disable-extensions")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--remote-debugging-port=9222")
+        options.add_argument(f"--user-data-dir={temp_user_data_dir}")
         options.add_argument("--disable-blink-features=AutomationControlled")
 
         if ENV != "local":
