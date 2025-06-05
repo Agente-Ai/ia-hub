@@ -1,10 +1,11 @@
 import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from langchain_core.messages import SystemMessage
 from langchain.chat_models import init_chat_model
 from langgraph.prebuilt import create_react_agent
+from langchain_core.prompts import ChatPromptTemplate
 from langgraph.checkpoint.postgres import PostgresSaver
+from langchain_core.messages import HumanMessage, SystemMessage
 from .tools import (
     retrieve_availability_and_prices,
     look_for_information_that_i_don_t_know,
@@ -18,12 +19,22 @@ def get_model():
     return init_chat_model(model="gpt-4")
 
 
+prompt_summarization = ChatPromptTemplate.from_messages(
+    [
+        SystemMessage(content="Resuma a conversa atual."),
+        HumanMessage(content="{messages}"),
+    ]
+)
+
 summarization_node = SummarizationNode(
-    max_tokens=384,
     model=get_model(),
-    max_summary_tokens=128,
+    max_tokens=384,
+    max_tokens_before_summary=5000,
     output_messages_key="messages",
     token_counter=count_tokens_approximately,
+    initial_summary_prompt=prompt_summarization,
+    existing_summary_prompt=prompt_summarization,
+    final_prompt=prompt_summarization,
 )
 
 
