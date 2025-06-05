@@ -22,27 +22,26 @@ def get_model():
 DEFAULT_INITIAL_SUMMARY_PROMPT = ChatPromptTemplate.from_messages(
     [
         ("placeholder", "{messages}"),
-        ("user", "Create a summary of the conversation above:"),
+        ("user", "Crie um resumo da conversa acima:"),
     ]
 )
-
 
 DEFAULT_EXISTING_SUMMARY_PROMPT = ChatPromptTemplate.from_messages(
     [
         ("placeholder", "{messages}"),
         (
             "user",
-            "This is summary of the conversation so far: {existing_summary}\n\n"
-            "Extend this summary by taking into account the new messages above:",
+            "Este é o resumo da conversa até agora: {existing_summary}\n\n"
+            "Estenda este resumo levando em consideração as novas mensagens acima:",
         ),
     ]
 )
 
 DEFAULT_FINAL_SUMMARY_PROMPT = ChatPromptTemplate.from_messages(
     [
-        # if exists
+        # se existir
         ("placeholder", "{system_message}"),
-        ("system", "Summary of the conversation so far: {summary}"),
+        ("system", "Resumo da conversa até agora: {summary}"),
         ("placeholder", "{messages}"),
     ]
 )
