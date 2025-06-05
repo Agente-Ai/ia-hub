@@ -3,7 +3,6 @@ import os
 import time
 import logging
 import tempfile
-from datetime import datetime
 
 import psycopg2
 from selenium import webdriver
@@ -437,9 +436,6 @@ def __process_each_room_id(
         logger.info("Acessando URL: %s", url)
         driver.get(url)
 
-        # Tira screenshot inicial e salva o HTML para debug
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
         # Espera pelo carregamento inicial da página (pode ser o título ou um elemento genérico)
         try:
             WebDriverWait(driver, 30).until(
@@ -484,8 +480,6 @@ def __process_each_room_id(
             room_id,
             e,
         )
-        # Tenta tirar um screenshot final em caso de erro
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         raise
     finally:
         # O driver será fechado na função initialize_airbnb_scraper
@@ -501,8 +495,8 @@ def initialize_airbnb_scraper(**kwargs):
     try:
         check_in = kwargs.get("check_in")
         check_out = kwargs.get("check_out")
-        guests = kwargs.get("guests", 1)
-        adults = kwargs.get("adults", 1)
+        guests = kwargs.get("guests")
+        adults = kwargs.get("adults")
         config = kwargs.get("config", {})
 
         if not all([check_in, check_out]):
