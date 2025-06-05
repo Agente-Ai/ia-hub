@@ -77,8 +77,10 @@ def get_checkpointer():
     return PostgresSaver.from_conn_string(os.getenv("POSTGRES_URL", ""))
 
 
-def create_agent_executor(checkpointer):
+def create_agent_executor(checkpointer: PostgresSaver):
     """Cria o executor do agente com as ferramentas e checkpoint."""
+    checkpointer.setup()
+
     model = get_model()
     tools = get_tools()
 

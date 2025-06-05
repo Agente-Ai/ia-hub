@@ -1,5 +1,5 @@
 from langchain_core.messages import HumanMessage
-from .agent_config import create_agent_executor
+from .agent_config import get_checkpointer, create_agent_executor
 
 
 class AgentRunner:
@@ -17,54 +17,55 @@ class AgentRunner:
 
     def chat_single(self, payload: dict):
         """Executa uma única mensagem e retorna a resposta."""
-        agent_executor = create_agent_executor()
+        with get_checkpointer() as checkpointer:
+            agent_executor = create_agent_executor(checkpointer)
 
-        entries = payload.get("entry", [])
-        entry = entries[0] if entries else {}
-        changes = entry.get("changes", [])
-        change = changes[0] if changes else {}
-        value = change.get("value", {})
+            entries = payload.get("entry", [])
+            entry = entries[0] if entries else {}
+            changes = entry.get("changes", [])
+            change = changes[0] if changes else {}
+            value = change.get("value", {})
 
-        messages = value.get("messages", [])
-        message = messages[0] if messages else {}
-        text = message.get("text", {})
-        content = text.get("body", "")
+            messages = value.get("messages", [])
+            message = messages[0] if messages else {}
+            text = message.get("text", {})
+            content = text.get("body", "")
 
-        responses = agent_executor.invoke(
-            {
-                "messages": [
-                    HumanMessage(content=content),
-                ],
-            },
-            self.config,
-            debug=True,
-        )
+            responses = agent_executor.invoke(
+                {
+                    "messages": [
+                        HumanMessage(content=content),
+                    ],
+                },
+                self.config,
+            )
 
-        return responses
+            return responses
 
     def chat_interactive(self):
         """Inicia um loop de conversa interativa."""
         print("Iniciando chat interativo (Ctrl+C ou Ctrl+D para sair)")
         print("-" * 50)
 
-        agent_executor = create_agent_executor()
+        with get_checkpointer() as checkpointer:
+            agent_executor = create_agent_executor(checkpointer)
 
-        while True:
-            try:
-                user_input = input("Você: ")
-                if not user_input.strip():
-                    continue
+            while True:
+                try:
+                    user_input = input("Você: ")
+                    if not user_input.strip():
+                        continue
 
-                print("\nAgente:")
-                for step in agent_executor.stream(
-                    {"messages": [HumanMessage(content=user_input)]},
-                    self.config,
-                    stream_mode="values",
-                ):
-                    step["messages"][-1].pretty_print()
+                    print("\nAgente:")
+                    for step in agent_executor.stream(
+                        {"messages": [HumanMessage(content=user_input)]},
+                        self.config,
+                        stream_mode="values",
+                    ):
+                        step["messages"][-1].pretty_print()
 
-                print("-" * 50)
+                    print("-" * 50)
 
-            except (KeyboardInterrupt, EOFError):
-                print("\nEncerrando...")
-                break
+                except (KeyboardInterrupt, EOFError):
+                    print("\nEncerrando...")
+                    break
