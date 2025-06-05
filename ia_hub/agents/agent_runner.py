@@ -1,5 +1,5 @@
+from .agent_config import execute_with_agent
 from langchain_core.messages import HumanMessage
-from .agent_config import get_checkpointer, create_agent_executor
 
 
 class AgentRunner:
@@ -17,9 +17,8 @@ class AgentRunner:
 
     def chat_single(self, payload: dict):
         """Executa uma única mensagem e retorna a resposta."""
-        with get_checkpointer() as checkpointer:
-            agent_executor = create_agent_executor(checkpointer)
 
+        def _execute_single_chat(agent_executor):
             entries = payload.get("entry", [])
             entry = entries[0] if entries else {}
             changes = entry.get("changes", [])
@@ -42,14 +41,14 @@ class AgentRunner:
 
             return responses
 
+        return execute_with_agent(_execute_single_chat)
+
     def chat_interactive(self):
         """Inicia um loop de conversa interativa."""
         print("Iniciando chat interativo (Ctrl+C ou Ctrl+D para sair)")
         print("-" * 50)
 
-        with get_checkpointer() as checkpointer:
-            agent_executor = create_agent_executor(checkpointer)
-
+        def _execute_interactive_chat(agent_executor):
             while True:
                 try:
                     user_input = input("Você: ")
@@ -69,3 +68,5 @@ class AgentRunner:
                 except (KeyboardInterrupt, EOFError):
                     print("\nEncerrando...")
                     break
+
+        execute_with_agent(_execute_interactive_chat)
