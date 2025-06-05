@@ -39,7 +39,6 @@ DEFAULT_EXISTING_SUMMARY_PROMPT = ChatPromptTemplate.from_messages(
 
 DEFAULT_FINAL_SUMMARY_PROMPT = ChatPromptTemplate.from_messages(
     [
-        # se existir
         ("placeholder", "{system_message}"),
         ("system", "Resumo da conversa até agora: {summary}"),
         ("placeholder", "{messages}"),
@@ -87,9 +86,7 @@ def create_agent_executor(checkpointer):
         model=model,
         tools=tools,
         prompt=SystemMessage(
-            content=f"""
-                Data atual: {datetime.now(ZoneInfo('America/Sao_Paulo')).isoformat()}
-            """,
+            content=f"Data atual: {datetime.now(ZoneInfo('America/Sao_Paulo')).isoformat()}"
         ),
         pre_model_hook=summarization_node,
         checkpointer=checkpointer,
