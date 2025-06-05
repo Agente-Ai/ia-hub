@@ -3,6 +3,7 @@
 # Importações para compatibilidade com código existente
 from .agent_factory import agent_factory
 
+
 # Funções de compatibilidade para código legado
 def get_checkpointer():
     """Compatibilidade: Cria e retorna o checkpointer PostgreSQL."""

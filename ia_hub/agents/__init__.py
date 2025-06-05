@@ -7,8 +7,8 @@ from .message_services import WhatsAppMessageProcessor, InteractiveChatService
 
 __all__ = [
     "AgentRunner",
-    "agent_factory", 
+    "agent_factory",
     "session_manager",
     "WhatsAppMessageProcessor",
-    "InteractiveChatService"
+    "InteractiveChatService",
 ]
