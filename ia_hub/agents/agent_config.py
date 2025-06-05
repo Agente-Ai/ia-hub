@@ -19,6 +19,34 @@ def get_model():
     return init_chat_model(model="gpt-4")
 
 
+DEFAULT_INITIAL_SUMMARY_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        ("placeholder", "{messages}"),
+        ("user", "Create a summary of the conversation above:"),
+    ]
+)
+
+
+DEFAULT_EXISTING_SUMMARY_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        ("placeholder", "{messages}"),
+        (
+            "user",
+            "This is summary of the conversation so far: {existing_summary}\n\n"
+            "Extend this summary by taking into account the new messages above:",
+        ),
+    ]
+)
+
+DEFAULT_FINAL_SUMMARY_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        # if exists
+        ("placeholder", "{system_message}"),
+        ("system", "Summary of the conversation so far: {summary}"),
+        ("placeholder", "{messages}"),
+    ]
+)
+
 prompt_summarization = ChatPromptTemplate.from_messages(
     [
         SystemMessage(content="Resuma a conversa atual."),
@@ -32,9 +60,9 @@ summarization_node = SummarizationNode(
     max_tokens_before_summary=5000,
     output_messages_key="messages",
     token_counter=count_tokens_approximately,
-    initial_summary_prompt=prompt_summarization,
-    existing_summary_prompt=prompt_summarization,
-    final_prompt=prompt_summarization,
+    final_prompt=DEFAULT_FINAL_SUMMARY_PROMPT,
+    initial_summary_prompt=DEFAULT_INITIAL_SUMMARY_PROMPT,
+    existing_summary_prompt=DEFAULT_EXISTING_SUMMARY_PROMPT,
 )
 
 
