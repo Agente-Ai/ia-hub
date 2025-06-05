@@ -99,13 +99,6 @@ def create_agent_executor(checkpointer: PostgresSaver):
     )
 
 
-def get_agent_executor_with_context():
-    """Cria e retorna o agent_executor gerenciando o contexto do checkpointer."""
-    with get_checkpointer() as checkpointer:
-        agent_executor = create_agent_executor(checkpointer)
-        return agent_executor, checkpointer
-
-
 def execute_with_agent(callback, *args, **kwargs):
     """Executa uma função passando o agent_executor como primeiro parâmetro.
 
