@@ -75,3 +75,11 @@ def look_for_information_that_i_don_t_know(
     )
 
     return results
+
+
+def get_tools():
+    """Retorna a lista de ferramentas disponíveis para o agente."""
+    return [
+        retrieve_availability_and_prices,
+        look_for_information_that_i_don_t_know,
+    ]
