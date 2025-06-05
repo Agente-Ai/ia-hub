@@ -86,7 +86,10 @@ def create_agent_executor(checkpointer):
         model=model,
         tools=tools,
         prompt=SystemMessage(
-            content=f"Data atual: {datetime.now(ZoneInfo('America/Sao_Paulo')).isoformat()}"
+            content=(
+                f"Data atual: "
+                f"{datetime.now(ZoneInfo('America/Sao_Paulo')).isoformat()}"
+            )
         ),
         pre_model_hook=summarization_node,
         checkpointer=checkpointer,
