@@ -34,8 +34,6 @@ class WhatsAppMessageProcessor:
     ) -> Dict[str, Any]:
         """Processa uma única mensagem do WhatsApp."""
         content = self.extract_message_content(payload)
-        if not content:
-            return {"error": "Mensagem vazia ou inválida"}
 
         def _execute_single_chat(agent_executor):
             return agent_executor.invoke(
