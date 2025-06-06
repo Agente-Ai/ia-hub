@@ -1,14 +1,11 @@
 """Factory para criação e configuração de agentes."""
 
 import os
-from datetime import datetime
-from zoneinfo import ZoneInfo
 from typing import Optional
 
 from langchain.chat_models import init_chat_model
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.postgres import PostgresSaver
-from langchain_core.messages import SystemMessage
 
 from .tools import get_tools
 from .summarization import get_summarization_node
@@ -53,17 +50,11 @@ class AgentFactory:
         summarization_node = get_summarization_node(model)
 
         return create_react_agent(
-            model=model,
-            tools=tools,
-            prompt=SystemMessage(
-                content=(
-                    f"Data atual: "
-                    f"{datetime.now(ZoneInfo('America/Sao_Paulo')).isoformat()}"
-                )
-            ),
-            pre_model_hook=summarization_node,
-            checkpointer=checkpointer,
             debug=True,
+            tools=tools,
+            model=model,
+            checkpointer=checkpointer,
+            pre_model_hook=summarization_node,
         )
 
     def get_agent_executor(self):

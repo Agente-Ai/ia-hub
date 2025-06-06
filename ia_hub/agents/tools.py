@@ -1,7 +1,11 @@
 import os
 from datetime import date
-
+from typing import Annotated
+from zoneinfo import ZoneInfo
+from datetime import datetime
 from langchain_core.tools import tool
+from langgraph.graph import MessagesState
+from langgraph.prebuilt import InjectedState
 from langchain_openai import OpenAIEmbeddings
 from langchain_core.runnables import RunnableConfig
 from langchain_postgres.vectorstores import PGVector
@@ -16,6 +20,7 @@ def retrieve_availability_and_prices(
     guests: int,
     adults: int,
     config: RunnableConfig,
+    state: Annotated[MessagesState, InjectedState],
 ) -> str:
     """
     Fetches availability and pricing information for a specified stay period.
@@ -26,6 +31,7 @@ def retrieve_availability_and_prices(
         guests (int): Total number of guests including adults and children.
         adults (int): Number of adult guests.
         config (RunnableConfig): Configuration options for the execution context.
+        state (MessagesState): The current state of messages, used for context.
 
     Returns:
         str: A formatted string containing availability status and price details
@@ -77,9 +83,21 @@ def look_for_information_that_i_don_t_know(
     return results
 
 
+@tool()
+def date_time_context() -> str:
+    """
+    Provides the current date and time in a formatted string.
+
+    Returns:
+        str: The current date and time in ISO 8601 format.
+    """
+    return f"{datetime.now(ZoneInfo('America/Sao_Paulo')).isoformat()}"
+
+
 def get_tools():
     """Retorna a lista de ferramentas disponíveis para o agente."""
     return [
+        date_time_context,
         retrieve_availability_and_prices,
         look_for_information_that_i_don_t_know,
     ]
