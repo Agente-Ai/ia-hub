@@ -1,6 +1,6 @@
 """Gerenciador de sessões e configurações do agente."""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from dataclasses import dataclass
 
 
@@ -35,21 +35,6 @@ class SessionManager:
         session = SessionConfig(thread_id=thread_id, owner_id=owner_id)
         self._sessions[thread_id] = session
         return session
-
-    def get_session(self, thread_id: str) -> Optional[SessionConfig]:
-        """Recupera uma sessão existente."""
-        return self._sessions.get(thread_id)
-
-    def remove_session(self, thread_id: str) -> bool:
-        """Remove uma sessão."""
-        if thread_id in self._sessions:
-            del self._sessions[thread_id]
-            return True
-        return False
-
-    def list_sessions(self) -> Dict[str, SessionConfig]:
-        """Lista todas as sessões ativas."""
-        return self._sessions.copy()
 
 
 # Instância singleton
