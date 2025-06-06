@@ -37,7 +37,7 @@ def get_summarization_node(model):
     return SummarizationNode(
         model=model,
         max_tokens=384,
-        max_tokens_before_summary=5000,
+        max_tokens_before_summary=768,
         output_messages_key="messages",
         token_counter=count_tokens_approximately,
         final_prompt=DEFAULT_FINAL_SUMMARY_PROMPT,
